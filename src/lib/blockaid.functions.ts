@@ -400,3 +400,16 @@ export const setSpotlight = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/* ---------- AI help for describing an issue ---------- */
+export const suggestIssueDetails = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({
+    demoRole, cityId, assetId: z.string().uuid(), description: z.string().trim().min(8, "Describe the problem in a few more words").max(1000),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    const admin = await getAdmin();
+    const { data: asset } = await admin.from("assets").select("asset_type").eq("id", data.assetId).eq("city_id", data.cityId).maybeSingle();
+    if (!asset) throw new Error("Asset not found in this city");
+    const { triageIssue } = await import("./ai-triage.server");
+    return triageIssue({ description: data.description, assetType: asset.asset_type.replace("_", " ") });
+  });

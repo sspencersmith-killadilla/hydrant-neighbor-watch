@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Camera } from "lucide-react";
+import { Camera, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { submitReport } from "@/lib/blockaid.functions";
+import { submitReport, suggestIssueDetails } from "@/lib/blockaid.functions";
 import { useCity } from "@/lib/session";
 import { fileToBase64 } from "@/lib/file";
 import { CREW_REASONS, DEBRIS_LABEL, type Asset, type CrewReason, type DebrisType } from "@/lib/blockaid";
@@ -40,6 +40,12 @@ export function ReportDialog({
   const qc = useQueryClient();
   const send = useServerFn(submitReport);
   const crew = mode === "needs_city_crew";
+  const suggest = useServerFn(suggestIssueDetails);
+  const ai = useMutation({
+    mutationFn: () => suggest({ data: { demoRole: demoArg, cityId: city.id, assetId: asset.id, description: notes } }),
+    onSuccess: (r) => setReason(r.category),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const m = useMutation({
     mutationFn: async () => {
@@ -86,8 +92,23 @@ export function ReportDialog({
           )}
           {crew && (
             <div className="space-y-2">
-              <Label htmlFor="notes">Short note</Label>
-              <Textarea id="notes" maxLength={500} rows={3} placeholder="What does the crew need to know?" value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <Label htmlFor="notes">Describe the problem</Label>
+              <Textarea id="notes" maxLength={500} rows={3} placeholder="e.g. Water is pooling across the crosswalk and the grate is covered in leaves" value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <Button type="button" size="tap" variant="outline" className="w-full" disabled={ai.isPending || notes.trim().length < 8} onClick={() => ai.mutate()}>
+                <Sparkles className="!size-5" /> {ai.isPending ? "Reading your description…" : "Help me categorize this"}
+              </Button>
+              {ai.data && (
+                <div className="space-y-2 rounded-lg border bg-accent p-3 text-sm text-accent-foreground" aria-live="polite">
+                  <p><span className="font-semibold">Suggested reason:</span> {ai.data.category}{ai.data.urgent && <span className="ml-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-semibold text-destructive-foreground">Urgent</span>}</p>
+                  <p className="text-muted-foreground">{ai.data.summary}</p>
+                  {ai.data.suggestedDetails.length > 0 && (
+                    <div><p className="font-semibold">Helpful details to add:</p>
+                      <ul className="ml-5 list-disc">{ai.data.suggestedDetails.map((d) => <li key={d}>{d}</li>)}</ul></div>
+                  )}
+                  {ai.data.safetyNote && <p className="font-medium text-destructive">{ai.data.safetyNote}</p>}
+                  <p className="text-xs text-muted-foreground">AI suggestion. Check the reason above and change it if it's wrong.</p>
+                </div>
+              )}
             </div>
           )}
           <div className="space-y-2">

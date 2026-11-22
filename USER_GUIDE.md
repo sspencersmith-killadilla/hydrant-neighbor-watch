@@ -44,6 +44,8 @@ Tap **Flag for City Crew** when something is beyond what a volunteer should hand
 
 You don't have to adopt an asset or sign in to clear it or flag it.
 
+**Not sure which reason fits?** Describe the problem in your own words, then tap **Help me categorize this**. BlockAid's AI-powered helper suggests a reason (and selects it for you), writes a one-line summary, lists details worth adding (like water depth or whether a lane is blocked), and adds a safety reminder when needed. It's only a suggestion, so check the reason before you send.
+
 ### Stay safe
 
 - Clear debris only from the curb or sidewalk.
