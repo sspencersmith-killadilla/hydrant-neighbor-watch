@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { GeoJSON, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import type { District } from "@/lib/districts";
 import { ASSET_TYPE_SHORT, type Asset } from "@/lib/blockaid";
 
 function icon(a: Asset, selected: boolean) {
@@ -24,8 +25,8 @@ function FitBounds({ assets }: { assets: Asset[] }) {
 }
 
 export default function AssetMap({
-  assets, selectedId, onSelect, className, center: c,
-}: { assets: Asset[]; selectedId?: string | null; onSelect?: (a: Asset) => void; className?: string; center?: [number, number] }) {
+  assets, selectedId, onSelect, className, center: c, boundaries = [],
+}: { boundaries?: District[]; assets: Asset[]; selectedId?: string | null; onSelect?: (a: Asset) => void; className?: string; center?: [number, number] }) {
   const center = useMemo<[number, number]>(() => c ?? [39.8283, -98.5795], [c]);
   return (
     <MapContainer center={center} zoom={16} className={className ?? ""} scrollWheelZoom>
@@ -35,6 +36,10 @@ export default function AssetMap({
         maxZoom={19}
       />
       <FitBounds assets={assets} />
+      {boundaries.filter((d) => d.boundary).map((d) => (
+        <GeoJSON key={d.id} data={{ type: "Feature", properties: {}, geometry: d.boundary! } as GeoJSON.Feature}
+          style={{ className: "district-boundary", weight: 2 }} />
+      ))}
       {assets.map((a) => (
         <Marker
           key={a.id}

@@ -36,6 +36,7 @@ function StartCity() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [query, setQuery] = useState("");
   const [places, setPlaces] = useState<Place[]>([]);
+  const [districtMode, setDistrictMode] = useState<"named" | "geojson">("named");
   const [center, setCenter] = useState<{ lat: number; lng: number; label: string } | null>(null);
   const create = useServerFn(createCity);
   const mine = useServerFn(getMyCities);
@@ -53,7 +54,7 @@ function StartCity() {
 
   const m = useMutation({
     mutationFn: () =>
-      create({ data: { name, region: region || undefined, slug, lat: center!.lat, lng: center!.lng } }),
+      create({ data: { name, region: region || undefined, slug, lat: center!.lat, lng: center!.lng, districtMode } }),
     onSuccess: (c) => {
       toast.success(`${name} is live on BlockAid`);
       qc.invalidateQueries({ queryKey: ["cities"] });
@@ -122,6 +123,19 @@ function StartCity() {
               )}
               <p className="text-xs text-muted-foreground">Place search by OpenStreetMap Nominatim.</p>
             </div>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-semibold">How will you set up neighborhoods?</legend>
+              {([
+                ["named", "Simple names", "Type neighborhood names (like \u201cWard 3\u201d) and tag assets with a district column in your spreadsheet."],
+                ["geojson", "Boundary map file", "Upload a GeoJSON file of neighborhood shapes from your GIS team. Assets are placed automatically."],
+              ] as const).map(([v, label, help]) => (
+                <label key={v} className="flex min-h-12 cursor-pointer gap-3 rounded-md border p-3 has-[:checked]:border-primary has-[:checked]:bg-accent">
+                  <input type="radio" name="districtMode" className="mt-1" checked={districtMode === v} onChange={() => setDistrictMode(v)} />
+                  <span><span className="block font-medium">{label}</span><span className="block text-sm text-muted-foreground">{help}</span></span>
+                </label>
+              ))}
+              <p className="text-xs text-muted-foreground">You can change this later on the City Data page.</p>
+            </fieldset>
             <Button type="submit" size="tap" className="w-full" disabled={!center || !user || m.isPending}>
               {m.isPending ? "Creating…" : "Create city"} <ArrowRight className="!size-5" />
             </Button>

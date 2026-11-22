@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { StormBanner } from "@/components/blockaid/StormBanner";
 import { LazyMap } from "@/components/blockaid/LazyMap";
 import { AssetPanel } from "@/components/blockaid/AssetPanel";
-import { assetsQuery } from "@/lib/queries";
+import { assetsQuery, districtsQuery } from "@/lib/queries";
+import { useNavigate } from "@tanstack/react-router";
 import { filterAssets, type FilterKey } from "@/lib/blockaid";
 import { cn } from "@/lib/utils";
 import { useCity } from "@/lib/session";
@@ -18,6 +19,8 @@ export const Route = createFileRoute("/c/$slug/")({
       { property: "og:description", content: "Adopt a storm drain and help your neighborhood get ready for severe weather." },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { district?: string } =>
+    typeof s["district"] === "string" && s["district"] ? { district: s["district"] } : {},
   component: ResidentMap,
 });
 
@@ -42,7 +45,15 @@ function ResidentMap() {
   const { data: assets = [], isError } = useQuery(assetsQuery(city.id));
   const [filter, setFilter] = useState<FilterKey>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const visible = useMemo(() => filterAssets(assets, filter), [assets, filter]);
+  const { data: districts = [] } = useQuery(districtsQuery(city.id));
+  const { district: districtSlug } = Route.useSearch();
+  const navigate = useNavigate({ from: "/c/$slug/" });
+  const district = districts.find((d) => d.slug === districtSlug) ?? null;
+  const visible = useMemo(
+    () => filterAssets(district ? assets.filter((a) => a.district_id === district.id) : assets, filter),
+    [assets, filter, district],
+  );
+  const mapCenter: [number, number] = district?.center_lat != null && district.center_lng != null ? [district.center_lat, district.center_lng] : [city.center_lat, city.center_lng];
   const selected = assets.find((a) => a.id === selectedId) ?? null;
 
   return (
@@ -50,8 +61,18 @@ function ResidentMap() {
       <h1 className="sr-only">{city.name} asset map</h1>
       <StormBanner />
       <div className="relative min-h-[520px] flex-1">
-        <LazyMap center={[city.center_lat, city.center_lng]} assets={visible} selectedId={selectedId} onSelect={(a) => setSelectedId(a.id)} className="absolute inset-0 h-full w-full" />
+        <LazyMap key={district?.id ?? "all"} center={mapCenter} boundaries={district ? [district] : districts} assets={visible} selectedId={selectedId} onSelect={(a) => setSelectedId(a.id)} className="absolute inset-0 h-full w-full" />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[400] p-3">
+          {districts.length > 0 && (
+            <label className="pointer-events-auto mb-2 inline-flex min-h-12 items-center gap-2 rounded-full border bg-card px-4 text-sm font-semibold shadow-md">
+              Neighborhood
+              <select className="min-h-10 bg-transparent font-normal" value={district?.slug ?? ""}
+                onChange={(e) => { setSelectedId(null); void navigate({ search: e.target.value ? { district: e.target.value } : {} }); }}>
+                <option value="">All of {city.name}</option>
+                {districts.map((d) => <option key={d.id} value={d.slug}>{d.name}</option>)}
+              </select>
+            </label>
+          )}
           <div role="toolbar" aria-label="Filter assets" className="pointer-events-auto flex gap-2 overflow-x-auto pb-1">
             {FILTERS.map((f) => (
               <button
@@ -69,7 +90,7 @@ function ResidentMap() {
           </div>
         </div>
         <div className="absolute bottom-3 left-3 z-[400] hidden rounded-lg border bg-card p-3 text-xs shadow-md sm:block">
-          <p className="mb-1 font-semibold">{visible.length} assets shown</p>
+          <p className="mb-1 font-semibold">{visible.length} assets shown{district ? ` in ${district.name}` : ""}</p>
           <ul className="space-y-1">
             {LEGEND.map((l) => (
               <li key={l.label} className="flex items-center gap-2"><span className={cn("h-3 w-3 rounded-full", l.cls)} />{l.label}</li>

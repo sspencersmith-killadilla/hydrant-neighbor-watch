@@ -36,6 +36,7 @@ export type Database = {
           asset_code: string
           asset_type: Database["public"]["Enums"]["asset_type"]
           city_id: string
+          district_id: string | null
           id: string
           last_updated_at: string
           lat: number
@@ -49,6 +50,7 @@ export type Database = {
           asset_code: string
           asset_type: Database["public"]["Enums"]["asset_type"]
           city_id: string
+          district_id?: string | null
           id?: string
           last_updated_at?: string
           lat: number
@@ -62,6 +64,7 @@ export type Database = {
           asset_code?: string
           asset_type?: Database["public"]["Enums"]["asset_type"]
           city_id?: string
+          district_id?: string | null
           id?: string
           last_updated_at?: string
           lat?: number
@@ -84,6 +87,13 @@ export type Database = {
             referencedRelation: "cities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assets_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "districts"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cities: {
@@ -92,6 +102,7 @@ export type Database = {
           center_lng: number
           created_at: string
           created_by: string | null
+          district_mode: string
           id: string
           is_demo: boolean
           name: string
@@ -105,6 +116,7 @@ export type Database = {
           center_lng: number
           created_at?: string
           created_by?: string | null
+          district_mode?: string
           id?: string
           is_demo?: boolean
           name: string
@@ -118,6 +130,7 @@ export type Database = {
           center_lng?: number
           created_at?: string
           created_by?: string | null
+          district_mode?: string
           id?: string
           is_demo?: boolean
           name?: string
@@ -153,6 +166,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "city_members_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      districts: {
+        Row: {
+          boundary: Json | null
+          center_lat: number | null
+          center_lng: number | null
+          city_id: string
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          boundary?: Json | null
+          center_lat?: number | null
+          center_lng?: number | null
+          city_id: string
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          boundary?: Json | null
+          center_lat?: number | null
+          center_lng?: number | null
+          city_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "districts_city_id_fkey"
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"

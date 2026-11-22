@@ -43,6 +43,13 @@
       "when": 1795368762047,
       "tag": "0005_scope_public_read_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795370520572,
+      "tag": "0006_city_districts",
+      "breakpoints": true
     }
   ]
 }

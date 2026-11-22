@@ -14,6 +14,7 @@ export interface Asset {
   status: AssetStatus;
   adopted_by: string | null;
   last_updated_at: string;
+  district_id: string | null;
 }
 
 export const ASSET_TYPE_LABEL: Record<AssetType, string> = {
@@ -83,6 +84,7 @@ export interface CsvAssetRow {
   address_label: string;
   lat: number;
   lng: number;
+  district?: string;
 }
 export interface CsvRowError { line: number; message: string }
 
@@ -134,7 +136,8 @@ export function parseAssetCsv(text: string): { rows: CsvAssetRow[]; errors: CsvR
     if (get(3) === "" || !Number.isFinite(lat) || lat < -90 || lat > 90) return void errors.push({ line, message: "Invalid lat" });
     if (get(4) === "" || !Number.isFinite(lng) || lng < -180 || lng > 180) return void errors.push({ line, message: "Invalid lng" });
     seen.add(code);
-    rows.push({ asset_code: code, asset_type: type as AssetType, address_label: addr, lat, lng });
+    const district = header.indexOf("district") >= 0 ? cells[header.indexOf("district")]?.trim() : "";
+    rows.push({ asset_code: code, asset_type: type as AssetType, address_label: addr, lat, lng, ...(district ? { district } : {}) });
   });
   return { rows, errors };
 }

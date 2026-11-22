@@ -83,6 +83,24 @@ function Community() {
 
       <MyBadges me={data.me} slug={city.slug} />
 
+      {data.districts.length > 0 && (
+        <section aria-label="Neighborhood readiness" className="rounded-2xl border bg-card p-5">
+          <h2 className="text-lg font-bold">Neighborhood readiness</h2>
+          <p className="text-sm text-muted-foreground">Share of each neighborhood's storm drains currently cleared.</p>
+          <ul className="mt-3 space-y-3">
+            {data.districts.map((d) => (
+              <li key={d.slug}>
+                <div className="flex items-baseline justify-between text-sm">
+                  <Link to="/c/$slug" params={{ slug: city.slug }} search={{ district: d.slug }} className="font-semibold underline-offset-2 hover:underline">{d.name}</Link>
+                  <span>{d.readiness}% · {d.adopted}/{d.assets} adopted</span>
+                </div>
+                <Progress value={d.readiness} className="mt-1 h-2" aria-label={`${d.name} readiness`} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="space-y-3">
         <h2 className="flex items-center gap-2 text-xl font-bold"><Users className="size-5" /> Teams</h2>
         {data.teams.length === 0 && <p className="text-muted-foreground">No teams yet. Start the first one for your block, school or group.</p>}

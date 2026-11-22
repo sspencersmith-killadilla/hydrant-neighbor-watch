@@ -162,3 +162,5 @@
 .doc th, .doc td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
 .doc th { background: var(--secondary); }
 .doc hr { margin: 2rem 0; border-color: var(--border); }
+
+.district-boundary { stroke: var(--primary); fill: var(--primary); fill-opacity: 0.05; }

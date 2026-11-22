@@ -53,6 +53,7 @@ export interface City {
   center_lat: number;
   center_lng: number;
   is_demo: boolean;
+  district_mode: "named" | "geojson";
 }
 
 interface CityValue {

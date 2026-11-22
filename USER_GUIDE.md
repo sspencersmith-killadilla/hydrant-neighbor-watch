@@ -27,6 +27,10 @@ Open **Try the demo city** on the home page. No account is needed. Use the **Dem
 
 The letters on each marker show the type: **SD** storm drain, **FH** fire hydrant, **PS** priority sidewalk.
 
+### Pick your neighborhood
+
+If your city has neighborhoods, use the **Neighborhood** menu at the top of the map to see only your area. Share a direct link like `/c/your-city?district=oak-ridge` with neighbors. The Community page shows how ready each neighborhood is for the next storm.
+
 ### Adopt an asset
 
 1. Sign in with your email (we send a one-tap link — no password).
@@ -144,6 +148,15 @@ Put quotes around an address that contains a comma. Extra columns are ignored.
 #### What happens next
 
 Imported assets appear on your city's map immediately as gray (unadopted) markers that residents can adopt. Residents see the address label, not raw coordinates.
+
+### Set up neighborhoods
+
+On **City Data → Neighborhoods**, choose one of two ways (you pick when starting your city and can switch later):
+
+- **Simple names** — type each neighborhood name (for example "Ward 3") and click **Add neighborhood**. To tag assets, add an optional `district` column to your asset CSV with the neighborhood name. Rows with a blank or unknown name stay citywide.
+- **Boundary map file** — upload a GeoJSON file of neighborhood shapes (Polygon or MultiPolygon, longitude/latitude). Each shape's name comes from a `name`, `neighborhood`, `district` or `ward` property. BlockAid places every asset in the shape that contains it, now and on every later import. Uploading a shape with the same name replaces it.
+
+Removing a neighborhood keeps its assets on the map without a neighborhood. The dispatch dashboard and exports always cover the whole city.
 
 ### Add colleagues
 

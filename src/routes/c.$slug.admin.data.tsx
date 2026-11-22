@@ -13,6 +13,7 @@ import { assetsQuery, openCrewReportsQuery } from "@/lib/queries";
 import { ASSET_TYPE_LABEL, SAMPLE_CSV, downloadText, parseAssetCsv, toCsv, type CsvAssetRow, type CsvRowError } from "@/lib/blockaid";
 import { issueType } from "@/lib/triage";
 import { useCity } from "@/lib/session";
+import { DistrictsSection } from "@/components/blockaid/DistrictsSection";
 
 export const Route = createFileRoute("/c/$slug/admin/data")({
   head: () => ({
@@ -62,11 +63,13 @@ function CityData() {
         <p className="text-sm text-muted-foreground">{city.name} · {assets.length} assets currently mapped.</p>
       </div>
 
+      <DistrictsSection />
+
       <section className="rounded-xl border bg-card p-5">
         <h2 className="text-lg font-bold">Import Assets via CSV</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Required columns: <code>asset_code, asset_type, address_label, lat, lng</code>. asset_type is one of storm_drain, fire_hydrant, priority_sidewalk.
-          Rows with an existing asset_code update that asset.
+          Rows with an existing asset_code update that asset. {city.district_mode === "geojson" ? "Each asset is placed in the neighborhood whose boundary contains it." : "Add an optional district column with a neighborhood name to tag each asset."}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button size="tap" variant="outline" onClick={() => downloadText("blockaid-asset-template.csv", SAMPLE_CSV)}>

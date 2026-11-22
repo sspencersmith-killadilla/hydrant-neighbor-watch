@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Asset } from "./blockaid";
 import type { City } from "./session";
+import type { District } from "./districts";
 
 export const citiesQuery = queryOptions({
   queryKey: ["cities"],
@@ -69,3 +70,13 @@ export const openCrewReportsQuery = (cityId: string) =>
     },
   });
 
+
+export const districtsQuery = (cityId: string) =>
+  queryOptions({
+    queryKey: ["districts", cityId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("districts").select("id, slug, name, center_lat, center_lng, boundary").eq("city_id", cityId).order("name");
+      if (error) throw error;
+      return data as unknown as District[];
+    },
+  });

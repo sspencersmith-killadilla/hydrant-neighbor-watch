@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { districtByLabel, districtForPoint, type Boundary } from "./districts";
 import { DEMO_ADMIN_ID, DEMO_RESIDENT_ID, CREW_REASONS, statusAfterCrewResolution } from "./blockaid";
 
 const demoRole = z.enum(["resident", "admin"]).optional();
@@ -206,14 +207,25 @@ export const importAssets = createServerFn({ method: "POST" })
         address_label: z.string().min(1).max(200),
         lat: z.number().min(-90).max(90),
         lng: z.number().min(-180).max(180),
+        district: z.string().max(80).optional(),
       })).min(1).max(5000),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     await requireAdmin(data.demoRole, data.cityId);
     const admin = await getAdmin();
+    const [{ data: city }, { data: ds }] = await Promise.all([
+      admin.from("cities").select("district_mode").eq("id", data.cityId).single(),
+      admin.from("districts").select("id, name, slug, boundary").eq("city_id", data.cityId),
+    ]);
+    const districts = (ds ?? []).map((d) => ({ ...d, boundary: d.boundary as Boundary | null }));
     const { error } = await admin.from("assets").upsert(
-      data.rows.map((r) => ({ ...r, city_id: data.cityId })),
+      data.rows.map(({ district, ...r }) => {
+        const match = city?.district_mode === "geojson"
+          ? districtForPoint(r.lat, r.lng, districts)
+          : district ? districtByLabel(district, districts) : null;
+        return { ...r, city_id: data.cityId, district_id: match?.id ?? null };
+      }),
       { onConflict: "city_id,asset_code" },
     );
     if (error) throw new Error(error.message);
@@ -257,6 +269,7 @@ export const createCity = createServerFn({ method: "POST" })
       slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,46}[a-z0-9]$/, "Use 3–48 lowercase letters, numbers or dashes"),
       lat: z.number().min(-90).max(90),
       lng: z.number().min(-180).max(180),
+      districtMode: z.enum(["named", "geojson"]).default("named"),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -265,7 +278,7 @@ export const createCity = createServerFn({ method: "POST" })
     const admin = await getAdmin();
     const { data: city, error } = await admin.from("cities").insert({
       name: data.name, region: data.region || null, slug: data.slug,
-      center_lat: data.lat, center_lng: data.lng, created_by: actor.id,
+      center_lat: data.lat, center_lng: data.lng, created_by: actor.id, district_mode: data.districtMode,
     }).select("id, slug").single();
     if (error) throw new Error(error.code === "23505" ? "That web address is already taken" : error.message);
     await admin.from("city_members").insert({ city_id: city.id, user_id: actor.id, role: "city_admin" });
@@ -303,12 +316,13 @@ export const getCommunity = createServerFn({ method: "POST" })
     const actor = await resolveActor(data.demoRole, data.cityId);
     const admin = await getAdmin();
     const [{ data: assets }, { data: reports }, { data: storms }, { data: teams }, { data: city }] = await Promise.all([
-      admin.from("assets").select("id, adopted_by, status, asset_type").eq("city_id", data.cityId),
+      admin.from("assets").select("id, adopted_by, status, asset_type, district_id").eq("city_id", data.cityId),
       admin.from("status_reports").select("reporter_id, status, debris_type, created_at, resolved_by_city, assets!inner(city_id)").eq("assets.city_id", data.cityId),
       admin.from("storm_events").select("title, is_active, created_at").eq("city_id", data.cityId).order("created_at", { ascending: false }),
       admin.from("teams").select("id, name, kind, description, team_members(user_id)").eq("city_id", data.cityId).order("name"),
       admin.from("cities").select("spotlight_title, spotlight_body").eq("id", data.cityId).maybeSingle(),
     ]);
+    const { data: dRows } = await admin.from("districts").select("id, name, slug").eq("city_id", data.cityId).order("name");
     const A = assets ?? [], R = reports ?? [], S = storms ?? [], T = teams ?? [];
     const cleared = R.filter((r) => r.status === "cleared");
     const byUser = new Map<string, number>();
@@ -344,6 +358,12 @@ export const getCommunity = createServerFn({ method: "POST" })
           isMine: !!actor && members.includes(actor.id),
         };
       }).sort((a, b) => b.checkins - a.checkins),
+      districts: (dRows ?? []).map((d) => {
+        const dd = (assets ?? []).filter((a) => a.district_id === d.id && a.asset_type === "storm_drain");
+        const all = (assets ?? []).filter((a) => a.district_id === d.id);
+        return { slug: d.slug, name: d.name, assets: all.length, adopted: all.filter((a) => a.adopted_by).length,
+          readiness: dd.length ? Math.round((dd.filter((a) => a.status === "cleared").length / dd.length) * 100) : 0 };
+      }).sort((a, b) => b.readiness - a.readiness),
       spotlight: city?.spotlight_title ? { title: city.spotlight_title, body: city.spotlight_body } : null,
       me: actor ? {
         checkins: mineReports.length,
@@ -412,4 +432,78 @@ export const suggestIssueDetails = createServerFn({ method: "POST" })
     if (!asset) throw new Error("Asset not found in this city");
     const { triageIssue } = await import("./ai-triage.server");
     return triageIssue({ description: data.description, assetType: asset.asset_type.replace("_", " ") });
+  });
+
+async function reassignByBoundary(cityIdValue: string) {
+  const admin = await getAdmin();
+  const [{ data: ds }, { data: as }] = await Promise.all([
+    admin.from("districts").select("id, boundary").eq("city_id", cityIdValue),
+    admin.from("assets").select("id, lat, lng, district_id").eq("city_id", cityIdValue),
+  ]);
+  const districts = (ds ?? []).map((d) => ({ id: d.id, boundary: d.boundary as Boundary | null }));
+  const groups = new Map<string | null, string[]>();
+  for (const a of as ?? []) {
+    const id = districtForPoint(a.lat, a.lng, districts)?.id ?? null;
+    if (id === a.district_id) continue;
+    groups.set(id, [...(groups.get(id) ?? []), a.id]);
+  }
+  for (const [id, ids] of groups) await admin.from("assets").update({ district_id: id }).in("id", ids);
+}
+
+export const setDistrictMode = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ demoRole, cityId, mode: z.enum(["named", "geojson"]) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.demoRole, data.cityId);
+    const admin = await getAdmin();
+    const { error } = await admin.from("cities").update({ district_mode: data.mode }).eq("id", data.cityId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const addNamedDistrict = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({
+    demoRole, cityId, name: z.string().trim().min(2).max(80),
+    slug: z.string().regex(/^[a-z0-9][a-z0-9-]{0,46}[a-z0-9]$/),
+    lat: z.number().min(-90).max(90).optional(), lng: z.number().min(-180).max(180).optional(),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.demoRole, data.cityId);
+    const admin = await getAdmin();
+    const { error } = await admin.from("districts").insert({
+      city_id: data.cityId, name: data.name, slug: data.slug, center_lat: data.lat ?? null, center_lng: data.lng ?? null,
+    });
+    if (error) throw new Error(error.code === "23505" ? "A neighborhood with that name already exists" : error.message);
+    return { ok: true };
+  });
+
+export const importDistrictBoundaries = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({
+    demoRole, cityId,
+    districts: z.array(z.object({
+      name: z.string().min(1).max(80), slug: z.string().min(1).max(48),
+      center_lat: z.number(), center_lng: z.number(),
+      boundary: z.object({ type: z.enum(["Polygon", "MultiPolygon"]), coordinates: z.array(z.any()) }),
+    })).min(1).max(500),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.demoRole, data.cityId);
+    const admin = await getAdmin();
+    const { error } = await admin.from("districts").upsert(
+      data.districts.map((d) => ({ ...d, city_id: data.cityId, boundary: d.boundary as never })),
+      { onConflict: "city_id,slug" },
+    );
+    if (error) throw new Error(error.message);
+    await admin.from("cities").update({ district_mode: "geojson" }).eq("id", data.cityId);
+    await reassignByBoundary(data.cityId);
+    return { count: data.districts.length };
+  });
+
+export const deleteDistrict = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ demoRole, cityId, districtId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.demoRole, data.cityId);
+    const admin = await getAdmin();
+    const { error } = await admin.from("districts").delete().eq("id", data.districtId).eq("city_id", data.cityId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
