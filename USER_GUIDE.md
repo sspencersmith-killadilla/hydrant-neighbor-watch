@@ -69,13 +69,55 @@ You are now the city's first admin. Share your city's web address with residents
 
 ### Add your infrastructure
 
-Open **City Data** → **Import Assets via CSV**.
+BlockAid places every asset on the map from its **geographic coordinates**. You load them from a spreadsheet file (CSV).
 
-1. **Download sample template** to see the format.
-2. Your file needs these columns: `asset_code, asset_type, address_label, lat, lng`.
-   `asset_type` is `storm_drain`, `fire_hydrant` or `priority_sidewalk`.
-3. **Choose CSV file**. BlockAid lists any rows it can't use and why, before you import.
-4. Press **Import**. If a row's `asset_code` is already in your city, that asset is updated instead of duplicated.
+#### Where the data comes from
+
+Most cities already keep layers for storm drains or catch basins, fire hydrants and sidewalk snow routes in their mapping (GIS) system. Export the layer you want to a CSV file.
+
+Coordinates must be **decimal latitude and longitude** (WGS 84), for example `41.5981, -93.6249`. Coordinates in feet or state-plane systems will not work; ask your GIS team to export in WGS 84 (EPSG:4326), or reproject the layer in QGIS or ArcGIS before exporting.
+
+No GIS file? You can find the coordinates of a single spot by right-clicking it in OpenStreetMap ("Show address") or Google Maps (the numbers at the top of the menu), and typing them into the template.
+
+#### The file format
+
+| Column | What it is | Example |
+| --- | --- | --- |
+| `asset_code` | Your city's own ID for the asset. Must be unique in the file. | `SD-2001` |
+| `asset_type` | Exactly one of `storm_drain`, `fire_hydrant`, `priority_sidewalk` | `storm_drain` |
+| `address_label` | A street address or intersection residents recognize | `610 Maple St & 6th Ave` |
+| `lat` | Decimal latitude, -90 to 90 | `41.5981` |
+| `lng` | Decimal longitude, -180 to 180 | `-93.6249` |
+
+Sample file:
+
+```csv
+asset_code,asset_type,address_label,lat,lng
+SD-2001,storm_drain,610 Maple St & 6th Ave,41.5981,-93.6249
+FH-301,fire_hydrant,615 Oak Ave & 6th Ave,41.5983,-93.6219
+PS-601,priority_sidewalk,"620 Elm St (Library route)",41.5980,-93.6188
+```
+
+Put quotes around an address that contains a comma. Extra columns are ignored.
+
+#### Importing
+
+1. Open **City Data** → **Import Assets via CSV**.
+2. **Download sample template** if you want a starting file.
+3. **Choose CSV file**. BlockAid checks it right away and lists any rows it can't use, with the line number and reason. Nothing is saved yet.
+4. Fix those rows and choose the file again, or press **Import** to load just the valid rows.
+5. If a row's `asset_code` already exists in your city, that asset's type, address and location are updated instead of creating a duplicate. You can re-import an updated GIS export at any time.
+
+#### Common problems
+
+- **Assets appear in the wrong country or the ocean:** `lat` and `lng` are swapped, or a minus sign is missing. In the Americas longitude is negative; south of the equator latitude is negative.
+- **"Invalid asset_type":** check spelling — lowercase with underscores, e.g. `storm_drain`.
+- **"Duplicate asset_code":** the same ID appears twice in one file. Only the first is kept.
+- **"Missing column(s)":** the header row must include all five column names.
+
+#### What happens next
+
+Imported assets appear on your city's map immediately as gray (unadopted) markers that residents can adopt. Residents see the address label, not raw coordinates.
 
 ### Add colleagues
 
@@ -91,7 +133,7 @@ On **City Data** → **Public Works Staff**, enter a colleague's email. They mus
 
 ### Export for work orders
 
-**City Data** → **Export Triage Report (CSV)** downloads every open crew ticket for 311 or work-order systems.
+**City Data** → **Export Triage Report (CSV)** downloads every open crew ticket for 311 or work-order systems. Columns: `asset_code, asset_type, address_label, lat, lng, issue_type, resident_notes, reported_at`. Photos stay in the dispatch queue and are not included in the file.
 
 ---
 
