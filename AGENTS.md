@@ -31,7 +31,9 @@ use the editor.
 
 ## Project rules
 - All writes go through server functions in `src/lib/blockaid.functions.ts` using the service client after `resolveActor`; tables only expose public SELECT. Why: lets demo-mode roles and real signed-in users share one authorization path.
-- Demo role actions are honoured only while `app_settings.demo_mode` is true; a signed-in user's real identity always wins. Why: turning demo mode off makes the app production-safe.
-- Admin rights come from `user_roles` (`city_admin`), never from `profiles.role`. Why: prevents privilege escalation.
+- Demo role actions are honoured only in a city with `cities.is_demo` while `app_settings.demo_mode` is true; a signed-in user's real identity always wins. Why: real cities must never accept anonymous admin actions.
+- Multi-tenant: every asset and storm event has `city_id`; admin rights are per city via `city_members` (`city_admin`), never `profiles.role`; every server function takes `cityId` and checks the asset belongs to it. Why: one deployment serves many cities without cross-city access.
+- City pages live under `/c/$slug` (layout provides `CityProvider`); platform pages (/, /start, /guide, /self-host, /auth) render their own `SiteHeader`. Why: keeps city context out of platform pages.
+- `/guide` and `/self-host` render `USER_GUIDE.md` and `SELF_HOSTING.md` via `?raw`. Why: one source for in-app and repository docs; keep the self-hosting guide free of any Lovable dependency.
 - Report photos live in a private bucket and are shown via short-lived signed URLs. Why: workspace blocks public buckets.
 - Leaflet is only loaded client-side through `LazyMap`. Why: Leaflet touches `window` at import and breaks SSR.
