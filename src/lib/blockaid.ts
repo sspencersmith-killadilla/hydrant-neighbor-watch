@@ -126,13 +126,13 @@ export function parseAssetCsv(text: string): { rows: CsvAssetRow[]; errors: CsvR
     const get = (k: number) => cells[idx[k] ?? -1] ?? "";
     const code = get(0), type = get(1), addr = get(2);
     const lat = Number(get(3)), lng = Number(get(4));
-    if (!code) return errors.push({ line, message: "asset_code is required" });
-    if (seen.has(code)) return errors.push({ line, message: `Duplicate asset_code ${code}` });
+    if (!code) return void errors.push({ line, message: "asset_code is required" });
+    if (seen.has(code)) return void errors.push({ line, message: `Duplicate asset_code ${code}` });
     if (!["storm_drain", "fire_hydrant", "priority_sidewalk"].includes(type))
-      return errors.push({ line, message: `Invalid asset_type "${type}"` });
-    if (!addr) return errors.push({ line, message: "address_label is required" });
-    if (get(3) === "" || !Number.isFinite(lat) || lat < -90 || lat > 90) return errors.push({ line, message: "Invalid lat" });
-    if (get(4) === "" || !Number.isFinite(lng) || lng < -180 || lng > 180) return errors.push({ line, message: "Invalid lng" });
+      return void errors.push({ line, message: `Invalid asset_type "${type}"` });
+    if (!addr) return void errors.push({ line, message: "address_label is required" });
+    if (get(3) === "" || !Number.isFinite(lat) || lat < -90 || lat > 90) return void errors.push({ line, message: "Invalid lat" });
+    if (get(4) === "" || !Number.isFinite(lng) || lng < -180 || lng > 180) return void errors.push({ line, message: "Invalid lng" });
     seen.add(code);
     rows.push({ asset_code: code, asset_type: type as AssetType, address_label: addr, lat, lng });
   });
