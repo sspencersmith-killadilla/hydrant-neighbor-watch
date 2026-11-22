@@ -36,6 +36,13 @@
       "when": 1795367693637,
       "tag": "0004_community_teams_spotlight",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795368762047,
+      "tag": "0005_scope_public_read_policies",
+      "breakpoints": true
     }
   ]
 }
