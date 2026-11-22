@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AdminGate } from "@/components/blockaid/AdminGate";
 import { LazyMap } from "@/components/blockaid/LazyMap";
-import { activeStormQuery, assetsQuery, openCrewReportsQuery, stormClearsQuery } from "@/lib/queries";
+import { activeStormQuery, assetsQuery, openCrewReportsQuery } from "@/lib/queries";
 import { activateStorm, deactivateStorm, getPhotoUrls, resetAdoptedAssets, resolveTicket } from "@/lib/blockaid.functions";
 import { ASSET_TYPE_LABEL } from "@/lib/blockaid";
 import { issueSeverity, issueType } from "@/lib/triage";
@@ -38,7 +38,6 @@ function Dispatch() {
   const { data: assets = [] } = useQuery(assetsQuery);
   const { data: storm } = useQuery(activeStormQuery);
   const { data: openReports = [] } = useQuery(openCrewReportsQuery);
-  const { data: clearedInEvent = 0 } = useQuery(stormClearsQuery(storm?.created_at ?? null));
   const [sort, setSort] = useState<"newest" | "severity">("newest");
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -73,7 +72,7 @@ function Dispatch() {
   const kpis = [
     { label: "Total Mapped Assets", value: assets.length },
     { label: "% Adopted by Residents", value: assets.length ? `${Math.round((adopted / assets.length) * 100)}%` : "0%" },
-    { label: storm ? "Cleared in Current Event" : "Cleared (all time)", value: clearedInEvent },
+    { label: storm ? "Cleared in Current Event" : "Currently Cleared", value: assets.filter((a) => a.status === "cleared").length },
     { label: "Open “Needs City Crew” Tickets", value: crewAssets.length, danger: true },
   ];
 
