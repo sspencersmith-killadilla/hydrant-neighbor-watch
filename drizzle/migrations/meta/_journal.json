@@ -22,6 +22,13 @@
       "when": 1795366656069,
       "tag": "0002_limit_report_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795367422052,
+      "tag": "0003_scope_status_reports_read",
+      "breakpoints": true
     }
   ]
 }
