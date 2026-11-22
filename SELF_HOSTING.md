@@ -40,6 +40,10 @@ done
 | `0000_blockaid_schema_and_seed.sql` | Tables, security rules, signup trigger, and the demo data |
 | `0001_multi_city.sql` | Cities, city admins, and the "Maple Heights (Demo)" city |
 | `0002_limit_report_columns.sql` | Hides who filed each report and its photo from public reads |
+| `0003_scope_status_reports_read.sql` | Limits report reads to reports on mapped assets |
+| `0004_community_teams_spotlight.sql` | Teams, team membership and the admin spotlight on the Community page |
+| `0005_scope_public_read_policies.sql` | Replaces "everyone can read" rules with specific conditions |
+| `0006_city_districts.sql` | Neighborhoods: names, boundary shapes, and which assets sit in each |
 
 Apply files added later the same way, and only once each.
 
@@ -88,9 +92,21 @@ VITE_SUPABASE_PROJECT_ID=YOUR-PROJECT-REF
 SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_OR_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+
+# Optional — only for the AI report helper (step 5b). Leave it out to run without it.
+LOVABLE_API_KEY=YOUR_AI_GATEWAY_KEY
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` has full database access. Keep it server-side only: never put it in a `VITE_` variable or in the repository.
+
+### 5b. Optional: the AI report helper
+
+The **Help me categorize this** button in the "Flag for City Crew" form asks a model to pick the best reason, write a one-line summary and suggest details to add. It is the only part of BlockAid that talks to a Lovable-hosted service, and nothing else depends on it.
+
+- **Without a key** the app works normally. The button just reports "AI help isn't set up yet," and residents pick a reason themselves.
+- **With a Lovable AI Gateway key**, put it in `LOVABLE_API_KEY` (and as a Worker secret in step 7). The helper calls `https://ai.gateway.lovable.dev/v1`.
+- **To use your own model instead**, edit `src/lib/ai-triage.server.ts`: point `createOpenAI` at any OpenAI-compatible server (`baseURL`, `apiKey`, model name) and keep the existing schema and instructions.
+- **To remove it entirely**, delete the button in `src/components/blockaid/ReportDialog.tsx` and the `suggestIssueDetails` function in `src/lib/blockaid.functions.ts`.
 
 ## 6. Run it locally
 
@@ -116,6 +132,7 @@ Then give the live app its server variables (enter each value when asked):
 npx wrangler secret put SUPABASE_URL --name blockaid
 npx wrangler secret put SUPABASE_PUBLISHABLE_KEY --name blockaid
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name blockaid
+npx wrangler secret put LOVABLE_API_KEY --name blockaid   # only if you use the AI helper (step 5b)
 ```
 
 Rebuild and redeploy after changing any `VITE_` value. Secrets apply without a rebuild.
@@ -126,7 +143,7 @@ In Cloudflare → **Workers & Pages → blockaid → Settings → Domains & Rout
 
 ## 8. Make the first administrator
 
-Sign in once at `/auth`, then open `/start` and create your city. The person who creates a city becomes its admin. That admin adds colleagues on the **City Data** page.
+Sign in once at `/auth`, then open `/start` and create your city. The person who creates a city becomes its admin. That admin adds colleagues on the **City Data** page, imports assets from a CSV file, and sets up neighborhoods there too.
 
 To make someone an admin directly in the database:
 
@@ -165,3 +182,4 @@ Photos are in the `report-photos` bucket; back them up with the Supabase CLI or 
 | "Missing Supabase environment variable" | Set the Worker secrets (step 7) |
 | Map is blank | Your network may block `tile.openstreetmap.org`; switch tile providers |
 | "Public Works admin access required" | Add the user to `city_members` (step 8) |
+| "AI help isn't set up yet" | Set `LOVABLE_API_KEY` (step 5b), or remove the helper |

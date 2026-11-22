@@ -68,6 +68,7 @@ When Public Works starts **Storm Mode**, a banner appears at the top of the map 
 Open **Community** in your city's menu to see how your neighborhood is doing.
 
 - **Storm-readiness:** the share of the city's storm drains currently marked cleared. During a storm alert you'll also see how many check-ins and residents have come in since the alert started.
+- **Neighborhood readiness:** when your city has neighborhoods, each one is listed by the share of its storm drains cleared. Tap a name to open that neighborhood's map.
 - **Impact totals:** assets adopted, check-ins, volunteers, and an estimate of debris kept out of drains (about 5 lbs per cleared check-in).
 - **Teams:** sign in, then tap **Start a team** (block club, school, scout troop, local business, neighborhood association or other group) or **Join team** on an existing one. Teams are ranked by their members' check-ins. You can leave a team at any time.
 - **Top volunteers:** the most active residents, shown by first name and last initial only.
@@ -118,6 +119,7 @@ No GIS file? You can find the coordinates of a single spot by right-clicking it 
 | `address_label` | A street address or intersection residents recognize | `610 Maple St & 6th Ave` |
 | `lat` | Decimal latitude, -90 to 90 | `41.5981` |
 | `lng` | Decimal longitude, -180 to 180 | `-93.6249` |
+| `district` | Optional. A neighborhood name you already set up | `Oak Ridge` |
 
 Sample file:
 
@@ -128,7 +130,7 @@ FH-301,fire_hydrant,615 Oak Ave & 6th Ave,41.5983,-93.6219
 PS-601,priority_sidewalk,"620 Elm St (Library route)",41.5980,-93.6188
 ```
 
-Put quotes around an address that contains a comma. Extra columns are ignored.
+Put quotes around an address that contains a comma. Extra columns are ignored — except `district`, which files that asset in the neighborhood you name.
 
 #### Importing
 
@@ -155,6 +157,8 @@ On **City Data → Neighborhoods**, choose one of two ways (you pick when starti
 
 - **Simple names** — type each neighborhood name (for example "Ward 3") and click **Add neighborhood**. To tag assets, add an optional `district` column to your asset CSV with the neighborhood name. Rows with a blank or unknown name stay citywide.
 - **Boundary map file** — upload a GeoJSON file of neighborhood shapes (Polygon or MultiPolygon, longitude/latitude). Each shape's name comes from a `name`, `neighborhood`, `district` or `ward` property. BlockAid places every asset in the shape that contains it, now and on every later import. Uploading a shape with the same name replaces it.
+
+In **Boundary map file** mode the `district` column is not used — each asset's coordinates decide its neighborhood.
 
 Removing a neighborhood keeps its assets on the map without a neighborhood. The dispatch dashboard and exports always cover the whole city.
 
