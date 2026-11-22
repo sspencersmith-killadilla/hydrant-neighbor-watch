@@ -44,6 +44,7 @@ export function SiteHeader({ city, isAdmin = false }: { city?: City; isAdmin?: b
           {city ? (
             <>
               <Link to="/c/$slug" params={{ slug: city.slug }} activeOptions={{ exact: true }} activeProps={active} className={navLink}>Map</Link>
+              <Link to="/c/$slug/community" params={{ slug: city.slug }} activeProps={active} className={navLink}>Community</Link>
               {isAdmin ? (
                 <>
                   <Link to="/c/$slug/admin" params={{ slug: city.slug }} activeOptions={{ exact: true }} activeProps={active} className={navLink}>Dispatch</Link>

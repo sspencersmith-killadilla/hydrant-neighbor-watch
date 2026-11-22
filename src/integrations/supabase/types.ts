@@ -97,6 +97,8 @@ export type Database = {
           name: string
           region: string | null
           slug: string
+          spotlight_body: string | null
+          spotlight_title: string | null
         }
         Insert: {
           center_lat: number
@@ -108,6 +110,8 @@ export type Database = {
           name: string
           region?: string | null
           slug: string
+          spotlight_body?: string | null
+          spotlight_title?: string | null
         }
         Update: {
           center_lat?: number
@@ -119,6 +123,8 @@ export type Database = {
           name?: string
           region?: string | null
           slug?: string
+          spotlight_body?: string | null
+          spotlight_title?: string | null
         }
         Relationships: []
       }
@@ -266,6 +272,70 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "storm_events_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          city_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          kind: string
+          name: string
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: string
+          name: string
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_city_id_fkey"
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"

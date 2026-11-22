@@ -16,6 +16,8 @@ import { Route as SelfHostRouteImport } from './routes/self-host'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as CSlugIndexRouteImport } from './routes/c.$slug.index'
+import { Route as CSlugCertificateRouteImport } from './routes/c.$slug.certificate'
+import { Route as CSlugCommunityRouteImport } from './routes/c.$slug.community'
 import { Route as CSlugMyAssetsRouteImport } from './routes/c.$slug.my-assets'
 import { Route as CSlugAdminIndexRouteImport } from './routes/c.$slug.admin.index'
 import { Route as CSlugAdminDataRouteImport } from './routes/c.$slug.admin.data'
@@ -55,6 +57,16 @@ const CSlugIndexRoute = CSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CSlugRoute,
 } as any)
+const CSlugCertificateRoute = CSlugCertificateRouteImport.update({
+  id: '/certificate',
+  path: '/certificate',
+  getParentRoute: () => CSlugRoute,
+} as any)
+const CSlugCommunityRoute = CSlugCommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => CSlugRoute,
+} as any)
 const CSlugMyAssetsRoute = CSlugMyAssetsRouteImport.update({
   id: '/my-assets',
   path: '/my-assets',
@@ -78,6 +90,8 @@ export interface FileRoutesByFullPath {
   '/self-host': typeof SelfHostRoute
   '/start': typeof StartRoute
   '/c/$slug': typeof CSlugRouteWithChildren
+  '/c/$slug/certificate': typeof CSlugCertificateRoute
+  '/c/$slug/community': typeof CSlugCommunityRoute
   '/c/$slug/my-assets': typeof CSlugMyAssetsRoute
   '/c/$slug/': typeof CSlugIndexRoute
   '/c/$slug/admin/data': typeof CSlugAdminDataRoute
@@ -89,6 +103,8 @@ export interface FileRoutesByTo {
   '/guide': typeof GuideRoute
   '/self-host': typeof SelfHostRoute
   '/start': typeof StartRoute
+  '/c/$slug/certificate': typeof CSlugCertificateRoute
+  '/c/$slug/community': typeof CSlugCommunityRoute
   '/c/$slug/my-assets': typeof CSlugMyAssetsRoute
   '/c/$slug': typeof CSlugIndexRoute
   '/c/$slug/admin/data': typeof CSlugAdminDataRoute
@@ -102,6 +118,8 @@ export interface FileRoutesById {
   '/self-host': typeof SelfHostRoute
   '/start': typeof StartRoute
   '/c/$slug': typeof CSlugRouteWithChildren
+  '/c/$slug/certificate': typeof CSlugCertificateRoute
+  '/c/$slug/community': typeof CSlugCommunityRoute
   '/c/$slug/my-assets': typeof CSlugMyAssetsRoute
   '/c/$slug/': typeof CSlugIndexRoute
   '/c/$slug/admin/data': typeof CSlugAdminDataRoute
@@ -116,6 +134,8 @@ export interface FileRouteTypes {
     | '/self-host'
     | '/start'
     | '/c/$slug'
+    | '/c/$slug/certificate'
+    | '/c/$slug/community'
     | '/c/$slug/my-assets'
     | '/c/$slug/'
     | '/c/$slug/admin/data'
@@ -127,6 +147,8 @@ export interface FileRouteTypes {
     | '/guide'
     | '/self-host'
     | '/start'
+    | '/c/$slug/certificate'
+    | '/c/$slug/community'
     | '/c/$slug/my-assets'
     | '/c/$slug'
     | '/c/$slug/admin/data'
@@ -139,6 +161,8 @@ export interface FileRouteTypes {
     | '/self-host'
     | '/start'
     | '/c/$slug'
+    | '/c/$slug/certificate'
+    | '/c/$slug/community'
     | '/c/$slug/my-assets'
     | '/c/$slug/'
     | '/c/$slug/admin/data'
@@ -205,6 +229,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CSlugIndexRouteImport
       parentRoute: typeof CSlugRoute
     }
+    '/c/$slug/certificate': {
+      id: '/c/$slug/certificate'
+      path: '/certificate'
+      fullPath: '/c/$slug/certificate'
+      preLoaderRoute: typeof CSlugCertificateRouteImport
+      parentRoute: typeof CSlugRoute
+    }
+    '/c/$slug/community': {
+      id: '/c/$slug/community'
+      path: '/community'
+      fullPath: '/c/$slug/community'
+      preLoaderRoute: typeof CSlugCommunityRouteImport
+      parentRoute: typeof CSlugRoute
+    }
     '/c/$slug/my-assets': {
       id: '/c/$slug/my-assets'
       path: '/my-assets'
@@ -230,6 +268,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface CSlugRouteChildren {
+  CSlugCertificateRoute: typeof CSlugCertificateRoute
+  CSlugCommunityRoute: typeof CSlugCommunityRoute
   CSlugMyAssetsRoute: typeof CSlugMyAssetsRoute
   CSlugIndexRoute: typeof CSlugIndexRoute
   CSlugAdminDataRoute: typeof CSlugAdminDataRoute
@@ -237,6 +277,8 @@ interface CSlugRouteChildren {
 }
 
 const CSlugRouteChildren: CSlugRouteChildren = {
+  CSlugCertificateRoute: CSlugCertificateRoute,
+  CSlugCommunityRoute: CSlugCommunityRoute,
   CSlugMyAssetsRoute: CSlugMyAssetsRoute,
   CSlugIndexRoute: CSlugIndexRoute,
   CSlugAdminDataRoute: CSlugAdminDataRoute,

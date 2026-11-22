@@ -293,3 +293,110 @@ export const getMyCities = createServerFn({ method: "POST" })
     const { data } = await admin.from("city_members").select("cities(id, slug, name, region)").eq("user_id", actor.id).eq("role", "city_admin");
     return (data ?? []).map((r) => r.cities).filter((c): c is NonNullable<typeof c> => !!c);
   });
+
+/* ---------- Community: teams, impact, badges, spotlight ---------- */
+import { earnedBadges, debrisEstimateLbs, publicName, TEAM_KINDS } from "./community";
+
+export const getCommunity = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ demoRole, cityId }).parse(d))
+  .handler(async ({ data }) => {
+    const actor = await resolveActor(data.demoRole, data.cityId);
+    const admin = await getAdmin();
+    const [{ data: assets }, { data: reports }, { data: storms }, { data: teams }, { data: city }] = await Promise.all([
+      admin.from("assets").select("id, adopted_by, status, asset_type").eq("city_id", data.cityId),
+      admin.from("status_reports").select("reporter_id, status, debris_type, created_at, resolved_by_city, assets!inner(city_id)").eq("assets.city_id", data.cityId),
+      admin.from("storm_events").select("title, is_active, created_at").eq("city_id", data.cityId).order("created_at", { ascending: false }),
+      admin.from("teams").select("id, name, kind, description, team_members(user_id)").eq("city_id", data.cityId).order("name"),
+      admin.from("cities").select("spotlight_title, spotlight_body").eq("id", data.cityId).maybeSingle(),
+    ]);
+    const A = assets ?? [], R = reports ?? [], S = storms ?? [], T = teams ?? [];
+    const cleared = R.filter((r) => r.status === "cleared");
+    const byUser = new Map<string, number>();
+    for (const r of R) if (r.reporter_id) byUser.set(r.reporter_id, (byUser.get(r.reporter_id) ?? 0) + 1);
+    const topIds = [...byUser.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const { data: profs } = topIds.length
+      ? await admin.from("profiles").select("id, full_name").in("id", topIds.map(([id]) => id))
+      : { data: [] as { id: string; full_name: string | null }[] };
+    const nameOf = new Map((profs ?? []).map((p) => [p.id, p.full_name]));
+    const adoptedBy = new Map<string, number>();
+    for (const a of A) if (a.adopted_by) adoptedBy.set(a.adopted_by, (adoptedBy.get(a.adopted_by) ?? 0) + 1);
+    const active = S.find((s) => s.is_active);
+    const sinceStorm = active ? R.filter((r) => r.created_at >= active.created_at) : [];
+    const drains = A.filter((a) => a.asset_type === "storm_drain");
+    const mineReports = actor ? R.filter((r) => r.reporter_id === actor.id) : [];
+    return {
+      readiness: drains.length ? Math.round((drains.filter((a) => a.status === "cleared").length / drains.length) * 100) : 0,
+      totals: {
+        assets: A.length,
+        adopted: A.filter((a) => a.adopted_by).length,
+        checkins: R.length,
+        volunteers: new Set([...A.map((a) => a.adopted_by), ...R.map((r) => r.reporter_id)].filter(Boolean)).size,
+        debrisLbs: debrisEstimateLbs(cleared.length),
+      },
+      storm: active ? { title: active.title, checkins: sinceStorm.length, residents: new Set(sinceStorm.map((r) => r.reporter_id).filter(Boolean)).size } : null,
+      leaders: topIds.map(([id, n]) => ({ name: publicName(nameOf.get(id)), checkins: n, isMe: id === actor?.id })),
+      teams: T.map((t) => {
+        const members = (t.team_members ?? []).map((m) => m.user_id);
+        return {
+          id: t.id, name: t.name, kind: t.kind, description: t.description, members: members.length,
+          checkins: members.reduce((s, u) => s + (byUser.get(u) ?? 0), 0),
+          adopted: members.reduce((s, u) => s + (adoptedBy.get(u) ?? 0), 0),
+          isMine: !!actor && members.includes(actor.id),
+        };
+      }).sort((a, b) => b.checkins - a.checkins),
+      spotlight: city?.spotlight_title ? { title: city.spotlight_title, body: city.spotlight_body } : null,
+      me: actor ? {
+        checkins: mineReports.length,
+        cleared: mineReports.filter((r) => r.status === "cleared").length,
+        adopted: adoptedBy.get(actor.id) ?? 0,
+        badges: earnedBadges(mineReports, adoptedBy.get(actor.id) ?? 0, S.map((s) => s.created_at)),
+        signedIn: !actor.isDemo,
+      } : null,
+    };
+  });
+
+export const createTeam = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({
+    demoRole, cityId,
+    name: z.string().trim().min(3).max(60),
+    kind: z.enum(Object.keys(TEAM_KINDS) as [keyof typeof TEAM_KINDS, ...(keyof typeof TEAM_KINDS)[]]),
+    description: z.string().trim().max(280).optional(),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    const actor = await resolveActor(data.demoRole, data.cityId);
+    if (!actor) throw new Error("Sign in to start a team");
+    const admin = await getAdmin();
+    const { data: team, error } = await admin.from("teams").insert({
+      city_id: data.cityId, name: data.name, kind: data.kind, description: data.description || null, created_by: actor.id,
+    }).select("id").single();
+    if (error) throw new Error(error.code === "23505" ? "A team with that name already exists here" : error.message);
+    await admin.from("team_members").insert({ team_id: team.id, user_id: actor.id });
+    return { ok: true };
+  });
+
+export const setTeamMembership = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ demoRole, cityId, teamId: z.string().uuid(), join: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    const actor = await resolveActor(data.demoRole, data.cityId);
+    if (!actor) throw new Error("Sign in to join a team");
+    const admin = await getAdmin();
+    const { data: t } = await admin.from("teams").select("id").eq("id", data.teamId).eq("city_id", data.cityId).maybeSingle();
+    if (!t) throw new Error("Team not found in this city");
+    const { error } = data.join
+      ? await admin.from("team_members").upsert({ team_id: data.teamId, user_id: actor.id }, { onConflict: "team_id,user_id", ignoreDuplicates: true })
+      : await admin.from("team_members").delete().eq("team_id", data.teamId).eq("user_id", actor.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setSpotlight = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({
+    demoRole, cityId, title: z.string().trim().max(80), body: z.string().trim().max(500),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.demoRole, data.cityId);
+    const admin = await getAdmin();
+    const { error } = await admin.from("cities").update({ spotlight_title: data.title || null, spotlight_body: data.body || null }).eq("id", data.cityId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
