@@ -57,6 +57,30 @@ When Public Works starts **Storm Mode**, a banner appears at the top of the map 
 
 ---
 
+### Community, teams and badges
+
+Open **Community** in your city's menu to see how your neighborhood is doing.
+
+- **Storm-readiness:** the share of the city's storm drains currently marked cleared. During a storm alert you'll also see how many check-ins and residents have come in since the alert started.
+- **Impact totals:** assets adopted, check-ins, volunteers, and an estimate of debris kept out of drains (about 5 lbs per cleared check-in).
+- **Teams:** sign in, then tap **Start a team** (block club, school, scout troop, local business, neighborhood association or other group) or **Join team** on an existing one. Teams are ranked by their members' check-ins. You can leave a team at any time.
+- **Top volunteers:** the most active residents, shown by first name and last initial only.
+- **Named assets:** every asset a neighbor has given a nickname.
+
+#### Badges
+
+| Badge | How to earn it |
+|---|---|
+| First Check-in | Submit your first check-in |
+| Storm Sentinel | Mark an asset cleared within 6 hours of a storm alert |
+| Autumn Veteran | Complete 5 or more leaf cleanouts |
+| Guardian of Three | Look after 3 or more assets |
+| Sharp Eye | Flag a problem that the city crew then fixes |
+
+#### Volunteer certificate
+
+On the Community page, tap **Print my certificate** for a printable certificate with your name, assets adopted, check-ins, estimated debris cleared and badges, useful for service hours or a front window.
+
 ## For Public Works staff
 
 ### Start your city
@@ -136,6 +160,10 @@ On **City Data** → **Public Works Staff**, enter a colleague's email. They mus
 **City Data** → **Export Triage Report (CSV)** downloads every open crew ticket for 311 or work-order systems. Columns: `asset_code, asset_type, address_label, lat, lng, issue_type, resident_notes, reported_at`. Photos stay in the dispatch queue and are not included in the file.
 
 ---
+
+### Spotlight a volunteer or team
+
+As a city admin, open **Community** and fill in the spotlight box at the top (for example "Volunteer of the Month: Maria G." with a short message). It appears to everyone on the Community page. Clear the title and save to remove it.
 
 ## Questions
 
