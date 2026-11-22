@@ -28,3 +28,10 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- All writes go through server functions in `src/lib/blockaid.functions.ts` using the service client after `resolveActor`; tables only expose public SELECT. Why: lets demo-mode roles and real signed-in users share one authorization path.
+- Demo role actions are honoured only while `app_settings.demo_mode` is true; a signed-in user's real identity always wins. Why: turning demo mode off makes the app production-safe.
+- Admin rights come from `user_roles` (`city_admin`), never from `profiles.role`. Why: prevents privilege escalation.
+- Report photos live in a private bucket and are shown via short-lived signed URLs. Why: workspace blocks public buckets.
+- Leaflet is only loaded client-side through `LazyMap`. Why: Leaflet touches `window` at import and breaks SSR.
