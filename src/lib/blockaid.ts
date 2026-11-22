@@ -154,3 +154,9 @@ export function downloadText(filename: string, text: string) {
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
+
+/** Turns a city name into a URL-safe address: lowercase letters, numbers and single dashes, max 48 chars. */
+export function slugify(name: string): string {
+  return name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48).replace(/-+$/g, "");
+}

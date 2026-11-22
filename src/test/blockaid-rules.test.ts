@@ -33,3 +33,10 @@ describe("BlockAid rules", () => {
     expect(r).toHaveLength(1);
   });
 });
+
+import { slugify } from "@/lib/blockaid";
+describe("City web address", () => {
+  it("turns a city name into a lowercase dashed address", () => {
+    expect(slugify("City of Riverton, IA")).toBe("city-of-riverton-ia");
+  });
+});

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitReport } from "@/lib/blockaid.functions";
-import { useSession } from "@/lib/session";
+import { useCity } from "@/lib/session";
 import { fileToBase64 } from "@/lib/file";
 import { CREW_REASONS, DEBRIS_LABEL, type Asset, type CrewReason, type DebrisType } from "@/lib/blockaid";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
 export function ReportDialog({
   asset, mode, open, onOpenChange,
 }: { asset: Asset; mode: "cleared" | "needs_city_crew"; open: boolean; onOpenChange: (o: boolean) => void }) {
-  const { demoArg } = useSession();
+  const { demoArg, city } = useCity();
   const [debris, setDebris] = useState<DebrisType | undefined>();
   const [reason, setReason] = useState<CrewReason | undefined>();
   const [notes, setNotes] = useState("");
@@ -46,7 +46,7 @@ export function ReportDialog({
       if (file && file.size > 8 * 1024 * 1024) throw new Error("Photo must be under 8 MB");
       const photo = file ? await fileToBase64(file) : undefined;
       return send({
-        data: { demoRole: demoArg, assetId: asset.id, status: mode, debrisType: debris, reason, notes: notes || undefined, photo },
+        data: { demoRole: demoArg, cityId: city.id, assetId: asset.id, status: mode, debrisType: debris, reason, notes: notes || undefined, photo },
       });
     },
     onSuccess: () => {

@@ -17,10 +17,10 @@ import { activeStormQuery, assetsQuery, openCrewReportsQuery } from "@/lib/queri
 import { activateStorm, deactivateStorm, getPhotoUrls, resetAdoptedAssets, resolveTicket } from "@/lib/blockaid.functions";
 import { ASSET_TYPE_LABEL } from "@/lib/blockaid";
 import { issueSeverity, issueType } from "@/lib/triage";
-import { useSession } from "@/lib/session";
+import { useCity } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/admin/")({
+export const Route = createFileRoute("/c/$slug/admin/")({
   head: () => ({
     meta: [
       { title: "Public Works Dispatch — BlockAid" },
@@ -33,11 +33,11 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function Dispatch() {
-  const { demoArg } = useSession();
+  const { demoArg, city } = useCity();
   const qc = useQueryClient();
-  const { data: assets = [] } = useQuery(assetsQuery);
-  const { data: storm } = useQuery(activeStormQuery);
-  const { data: openReports = [] } = useQuery(openCrewReportsQuery);
+  const { data: assets = [] } = useQuery(assetsQuery(city.id));
+  const { data: storm } = useQuery(activeStormQuery(city.id));
+  const { data: openReports = [] } = useQuery(openCrewReportsQuery(city.id));
   const [sort, setSort] = useState<"newest" | "severity">("newest");
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -62,7 +62,7 @@ function Dispatch() {
 
   const resolve = useServerFn(resolveTicket);
   const resolveM = useMutation({
-    mutationFn: (assetId: string) => resolve({ data: { demoRole: demoArg, assetId } }),
+    mutationFn: (assetId: string) => resolve({ data: { demoRole: demoArg, cityId: city.id, assetId } }),
     onSuccess: () => { toast.success("Ticket resolved · asset marked Cleared"); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -80,6 +80,7 @@ function Dispatch() {
     <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold">Public Works & Emergency Dispatch</h1>
+        <p className="font-semibold text-accent-foreground">{city.name}</p>
         <p className="text-sm text-muted-foreground">Live view of resident reports across the service area.</p>
       </div>
 
@@ -149,7 +150,7 @@ function Dispatch() {
             )}
           </div>
           <div className="relative h-80 border-t lg:col-span-2 lg:h-auto lg:min-h-[420px] lg:border-l lg:border-t-0">
-            <LazyMap assets={crewAssets} selectedId={selectedId} onSelect={(a) => setSelectedId(a.id)} className="absolute inset-0 h-full w-full" />
+            <LazyMap center={[city.center_lat, city.center_lng]} assets={crewAssets} selectedId={selectedId} onSelect={(a) => setSelectedId(a.id)} className="absolute inset-0 h-full w-full" />
           </div>
         </div>
       </section>
@@ -167,7 +168,7 @@ function Dispatch() {
 type Storm = { id: string; title: string; severity: "advisory" | "watch" | "warning"; instructions: string | null; created_at: string } | null;
 
 function StormPanel({ storm, onChange }: { storm: Storm; onChange: () => void }) {
-  const { demoArg } = useSession();
+  const { demoArg, city } = useCity();
   const [title, setTitle] = useState("");
   const [severity, setSeverity] = useState<"advisory" | "watch" | "warning">("watch");
   const [instructions, setInstructions] = useState("Clear leaves and trash from the top of your adopted grate before the rain starts. Stay on the curb and never enter moving water.");
@@ -175,9 +176,9 @@ function StormPanel({ storm, onChange }: { storm: Storm; onChange: () => void })
   const deactivate = useServerFn(deactivateStorm);
   const reset = useServerFn(resetAdoptedAssets);
   const onErr = (e: Error) => toast.error(e.message);
-  const activateM = useMutation({ mutationFn: () => activate({ data: { demoRole: demoArg, title, severity, instructions } }), onSuccess: () => { toast.success("Storm Mode activated · residents now see the alert"); setTitle(""); onChange(); }, onError: onErr });
-  const deactivateM = useMutation({ mutationFn: () => deactivate({ data: { demoRole: demoArg } }), onSuccess: () => { toast.success("Storm Mode ended"); onChange(); }, onError: onErr });
-  const resetM = useMutation({ mutationFn: () => reset({ data: { demoRole: demoArg } }), onSuccess: (r) => { toast.success(`${r.count} adopted assets reset to Needs Check`); onChange(); }, onError: onErr });
+  const activateM = useMutation({ mutationFn: () => activate({ data: { demoRole: demoArg, cityId: city.id, title, severity, instructions } }), onSuccess: () => { toast.success("Storm Mode activated · residents now see the alert"); setTitle(""); onChange(); }, onError: onErr });
+  const deactivateM = useMutation({ mutationFn: () => deactivate({ data: { demoRole: demoArg, cityId: city.id } }), onSuccess: () => { toast.success("Storm Mode ended"); onChange(); }, onError: onErr });
+  const resetM = useMutation({ mutationFn: () => reset({ data: { demoRole: demoArg, cityId: city.id } }), onSuccess: (r) => { toast.success(`${r.count} adopted assets reset to Needs Check`); onChange(); }, onError: onErr });
 
   return (
     <section aria-label="Storm mode" className="rounded-xl border bg-card p-4">

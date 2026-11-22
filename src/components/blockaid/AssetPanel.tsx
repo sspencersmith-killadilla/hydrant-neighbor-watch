@@ -8,10 +8,10 @@ import { AdoptDialog } from "./AdoptDialog";
 import { ReportDialog } from "./ReportDialog";
 import { reportsForAssetQuery } from "@/lib/queries";
 import { ASSET_TYPE_LABEL, type Asset } from "@/lib/blockaid";
-import { useSession } from "@/lib/session";
+import { useCity } from "@/lib/session";
 
 export function AssetPanel({ asset, onClose }: { asset: Asset; onClose: () => void }) {
-  const { profile } = useSession();
+  const { profile } = useCity();
   const [adoptOpen, setAdoptOpen] = useState(false);
   const [report, setReport] = useState<"cleared" | "needs_city_crew" | null>(null);
   const { data: reports = [] } = useQuery(reportsForAssetQuery(asset.id));

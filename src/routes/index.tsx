@@ -1,82 +1,97 @@
-import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { StormBanner } from "@/components/blockaid/StormBanner";
-import { LazyMap } from "@/components/blockaid/LazyMap";
-import { AssetPanel } from "@/components/blockaid/AssetPanel";
-import { assetsQuery } from "@/lib/queries";
-import { filterAssets, type FilterKey } from "@/lib/blockaid";
-import { cn } from "@/lib/utils";
+import { ArrowRight, BookOpen, Building2, Droplets, MapPin, Server, Siren } from "lucide-react";
+import { SiteHeader } from "@/components/blockaid/SiteHeader";
+import { SiteFooter } from "@/components/blockaid/SiteFooter";
+import { Button } from "@/components/ui/button";
+import { citiesQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Resident Map — BlockAid" },
-      { name: "description", content: "Find, adopt and report on storm drains, fire hydrants and priority sidewalks near you." },
-      { property: "og:title", content: "Resident Map — BlockAid" },
-      { property: "og:description", content: "Adopt a storm drain and help your neighborhood get ready for severe weather." },
+      { title: "BlockAid — Volunteer storm readiness for every city" },
+      { name: "description", content: "Free, open-source platform where residents adopt storm drains, hydrants and sidewalks and Public Works triages reports during severe weather." },
+      { property: "og:title", content: "BlockAid — Volunteer storm readiness for every city" },
+      { property: "og:description", content: "Start your city on BlockAid in minutes. Free OpenStreetMap maps, no map fees." },
     ],
   }),
-  component: ResidentMap,
+  component: Landing,
 });
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "storm_drain", label: "Storm Drains" },
-  { key: "fire_hydrant", label: "Fire Hydrants" },
-  { key: "priority_sidewalk", label: "Sidewalks" },
-  { key: "unadopted", label: "Unadopted Only" },
-  { key: "needs_crew", label: "Needs Crew" },
+const FEATURES = [
+  { icon: Droplets, title: "Adopt-a-Drain", text: "Residents adopt storm drains, fire hydrants and senior-priority sidewalks and check in before storms." },
+  { icon: Siren, title: "Storm Mode", text: "Public Works broadcasts alerts, resets every adopted asset, and watches citywide readiness climb." },
+  { icon: MapPin, title: "Crew triage", text: "Flags arrive with photos, GPS links and issue types, sorted for dispatch and exportable to 311." },
 ];
 
-const LEGEND = [
-  { cls: "bg-unadopted", label: "Unadopted" },
-  { cls: "bg-info", label: "Adopted / Needs Check" },
-  { cls: "bg-success", label: "Cleared" },
-  { cls: "bg-destructive", label: "Needs City Crew" },
-];
-
-function ResidentMap() {
-  const { data: assets = [], isError } = useQuery(assetsQuery);
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const visible = useMemo(() => filterAssets(assets, filter), [assets, filter]);
-  const selected = assets.find((a) => a.id === selectedId) ?? null;
-
+function Landing() {
+  const { data: cities = [] } = useQuery(citiesQuery);
+  const demo = cities.find((c) => c.is_demo);
+  const live = cities.filter((c) => !c.is_demo);
   return (
-    <main className="flex flex-1 flex-col">
-      <h1 className="sr-only">Resident asset map</h1>
-      <StormBanner />
-      <div className="relative min-h-[520px] flex-1">
-        <LazyMap assets={visible} selectedId={selectedId} onSelect={(a) => setSelectedId(a.id)} className="absolute inset-0 h-full w-full" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[400] p-3">
-          <div role="toolbar" aria-label="Filter assets" className="pointer-events-auto flex gap-2 overflow-x-auto pb-1">
-            {FILTERS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                aria-pressed={filter === f.key}
-                className={cn(
-                  "min-h-12 shrink-0 rounded-full border px-4 text-sm font-semibold shadow-md transition-colors",
-                  filter === f.key ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-card-foreground hover:bg-accent",
+    <>
+      <SiteHeader />
+      <main className="flex-1">
+        <section className="border-b bg-card">
+          <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-2 md:py-20">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-widest text-highlight">A CivicPlexus app</p>
+              <h1 className="mt-3 text-4xl font-extrabold leading-tight md:text-5xl">
+                Neighbors keep the drains clear. <span className="text-brand">Crews go where they're needed.</span>
+              </h1>
+              <p className="mt-4 text-lg text-muted-foreground">
+                BlockAid coordinates resident volunteers who maintain storm drains, hydrants and priority sidewalks, and gives Public Works a live triage dashboard during severe weather.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button asChild size="tap"><Link to="/start"><Building2 className="!size-5" /> Start your city</Link></Button>
+                {demo && (
+                  <Button asChild size="tap" variant="outline">
+                    <Link to="/c/$slug" params={{ slug: demo.slug }}>Try the demo city <ArrowRight className="!size-5" /></Link>
+                  </Button>
                 )}
-              >
-                {f.label}
-              </button>
-            ))}
+              </div>
+            </div>
+            <ul className="grid gap-4">
+              {FEATURES.map((f) => (
+                <li key={f.title} className="flex gap-4 rounded-xl border bg-background p-5">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand text-primary-foreground"><f.icon className="h-5 w-5" /></span>
+                  <div><h2 className="font-bold">{f.title}</h2><p className="text-sm text-muted-foreground">{f.text}</p></div>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-        <div className="absolute bottom-3 left-3 z-[400] hidden rounded-lg border bg-card p-3 text-xs shadow-md sm:block">
-          <p className="mb-1 font-semibold">{visible.length} assets shown</p>
-          <ul className="space-y-1">
-            {LEGEND.map((l) => (
-              <li key={l.label} className="flex items-center gap-2"><span className={cn("h-3 w-3 rounded-full", l.cls)} />{l.label}</li>
-            ))}
-          </ul>
-        </div>
-        {isError && <p className="absolute left-1/2 top-20 z-[400] -translate-x-1/2 rounded bg-destructive px-3 py-2 text-sm text-destructive-foreground">Could not load assets. Refresh to try again.</p>}
-        {selected && <AssetPanel key={selected.id} asset={selected} onClose={() => setSelectedId(null)} />}
-      </div>
-    </main>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-5 py-12">
+          <h2 className="text-2xl font-bold">Cities on BlockAid</h2>
+          {live.length === 0 ? (
+            <p className="mt-2 text-muted-foreground">No cities have launched yet. Yours could be first.</p>
+          ) : (
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {live.map((c) => (
+                <li key={c.id}>
+                  <Link to="/c/$slug" params={{ slug: c.slug }} className="flex min-h-16 items-center justify-between rounded-xl border bg-card p-4 hover:border-primary">
+                    <span><span className="block font-bold">{c.name}</span>{c.region && <span className="text-sm text-muted-foreground">{c.region}</span>}</span>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mx-auto grid max-w-6xl gap-4 px-5 pb-14 md:grid-cols-2">
+          <Link to="/guide" className="flex gap-4 rounded-xl border bg-card p-5 hover:border-primary">
+            <BookOpen className="h-6 w-6 text-highlight" />
+            <span><span className="block font-bold">User guide</span><span className="text-sm text-muted-foreground">For residents and Public Works staff.</span></span>
+          </Link>
+          <Link to="/self-host" className="flex gap-4 rounded-xl border bg-card p-5 hover:border-primary">
+            <Server className="h-6 w-6 text-highlight" />
+            <span><span className="block font-bold">Self-hosting guide</span><span className="text-sm text-muted-foreground">Run BlockAid on your own servers.</span></span>
+          </Link>
+        </section>
+      </main>
+      <SiteFooter />
+    </>
   );
 }

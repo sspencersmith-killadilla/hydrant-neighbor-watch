@@ -1,26 +1,48 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Asset } from "./blockaid";
+import type { City } from "./session";
 
-export const assetsQuery = queryOptions({
-  queryKey: ["assets"],
+export const citiesQuery = queryOptions({
+  queryKey: ["cities"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("assets").select("*").order("asset_code");
+    const { data, error } = await supabase.from("cities").select("*").order("is_demo", { ascending: false }).order("name");
     if (error) throw error;
-    return data as Asset[];
+    return data as City[];
   },
 });
 
-export const activeStormQuery = queryOptions({
-  queryKey: ["storm", "active"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("storm_events").select("*").eq("is_active", true)
-      .order("created_at", { ascending: false }).limit(1).maybeSingle();
-    if (error) throw error;
-    return data;
-  },
-});
+export const cityBySlugQuery = (slug: string) =>
+  queryOptions({
+    queryKey: ["cities", slug],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cities").select("*").eq("slug", slug).maybeSingle();
+      if (error) throw error;
+      return data as City | null;
+    },
+  });
+
+export const assetsQuery = (cityId: string) =>
+  queryOptions({
+    queryKey: ["assets", cityId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("assets").select("*").eq("city_id", cityId).order("asset_code");
+      if (error) throw error;
+      return data as Asset[];
+    },
+  });
+
+export const activeStormQuery = (cityId: string) =>
+  queryOptions({
+    queryKey: ["storm", "active", cityId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("storm_events").select("*").eq("city_id", cityId).eq("is_active", true)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
 export const reportsForAssetQuery = (assetId: string) =>
   queryOptions({
@@ -34,26 +56,16 @@ export const reportsForAssetQuery = (assetId: string) =>
     },
   });
 
-export const openCrewReportsQuery = queryOptions({
-  queryKey: ["reports", "open-crew"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("status_reports").select("*").eq("status", "needs_city_crew").eq("resolved_by_city", false)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return data;
-  },
-});
-
-export const stormClearsQuery = (since: string | null) =>
+export const openCrewReportsQuery = (cityId: string) =>
   queryOptions({
-    queryKey: ["reports", "storm-clears", since],
+    queryKey: ["reports", "open-crew", cityId],
     queryFn: async () => {
-      let q = supabase.from("status_reports").select("asset_id", { count: "exact" }).eq("status", "cleared");
-      if (since) q = q.gte("created_at", since);
-      const { data, error } = await q;
+      const { data, error } = await supabase
+        .from("status_reports").select("*, assets!inner(city_id)")
+        .eq("assets.city_id", cityId).eq("status", "needs_city_crew").eq("resolved_by_city", false)
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return new Set((data ?? []).map((r) => r.asset_id)).size;
+      return data;
     },
   });
 
@@ -68,5 +80,3 @@ export const myCheckinsQuery = (profileId: string | undefined) =>
       return count ?? 0;
     },
   });
-
-export const allQueryKeys = [["assets"], ["reports"], ["storm"]] as const;

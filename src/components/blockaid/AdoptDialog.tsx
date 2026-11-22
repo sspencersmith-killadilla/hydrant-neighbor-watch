@@ -8,18 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { adoptAsset } from "@/lib/blockaid.functions";
-import { useSession } from "@/lib/session";
+import { useCity } from "@/lib/session";
 import type { Asset } from "@/lib/blockaid";
 
 export function AdoptDialog({ asset, open, onOpenChange }: { asset: Asset; open: boolean; onOpenChange: (o: boolean) => void }) {
-  const { demoArg, profile, refetchProfile } = useSession();
+  const { demoArg, profile, refetchProfile, city } = useCity();
   const [nickname, setNickname] = useState("");
   const [agree, setAgree] = useState(false);
   const qc = useQueryClient();
   const adopt = useServerFn(adoptAsset);
   const alreadyAccepted = !!profile?.safety_waiver_accepted;
   const m = useMutation({
-    mutationFn: () => adopt({ data: { demoRole: demoArg, assetId: asset.id, nickname: nickname || undefined, acceptWaiver: true } }),
+    mutationFn: () => adopt({ data: { demoRole: demoArg, cityId: city.id, assetId: asset.id, nickname: nickname || undefined, acceptWaiver: true } }),
     onSuccess: () => {
       toast.success(`You adopted ${asset.asset_code}. Thank you!`);
       qc.invalidateQueries({ queryKey: ["assets"] });

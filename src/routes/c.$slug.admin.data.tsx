@@ -3,16 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Download, FileUp } from "lucide-react";
+import { Download, FileUp, UserPlus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { addCityAdmin } from "@/lib/blockaid.functions";
 import { Button } from "@/components/ui/button";
 import { AdminGate } from "@/components/blockaid/AdminGate";
 import { importAssets } from "@/lib/blockaid.functions";
 import { assetsQuery, openCrewReportsQuery } from "@/lib/queries";
 import { ASSET_TYPE_LABEL, SAMPLE_CSV, downloadText, parseAssetCsv, toCsv, type CsvAssetRow, type CsvRowError } from "@/lib/blockaid";
 import { issueType } from "@/lib/triage";
-import { useSession } from "@/lib/session";
+import { useCity } from "@/lib/session";
 
-export const Route = createFileRoute("/admin/data")({
+export const Route = createFileRoute("/c/$slug/admin/data")({
   head: () => ({
     meta: [
       { title: "City Data Management — BlockAid" },
@@ -25,14 +27,14 @@ export const Route = createFileRoute("/admin/data")({
 });
 
 function CityData() {
-  const { demoArg } = useSession();
+  const { demoArg, city } = useCity();
   const qc = useQueryClient();
-  const { data: assets = [] } = useQuery(assetsQuery);
-  const { data: openReports = [] } = useQuery(openCrewReportsQuery);
+  const { data: assets = [] } = useQuery(assetsQuery(city.id));
+  const { data: openReports = [] } = useQuery(openCrewReportsQuery(city.id));
   const [parsed, setParsed] = useState<{ name: string; rows: CsvAssetRow[]; errors: CsvRowError[] } | null>(null);
   const imp = useServerFn(importAssets);
   const m = useMutation({
-    mutationFn: () => imp({ data: { demoRole: demoArg, rows: parsed!.rows } }),
+    mutationFn: () => imp({ data: { demoRole: demoArg, cityId: city.id, rows: parsed!.rows } }),
     onSuccess: (r) => { toast.success(`${r.count} assets imported`); setParsed(null); qc.invalidateQueries({ queryKey: ["assets"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -57,7 +59,7 @@ function CityData() {
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold">City Data Management</h1>
-        <p className="text-sm text-muted-foreground">{assets.length} assets currently mapped.</p>
+        <p className="text-sm text-muted-foreground">{city.name} · {assets.length} assets currently mapped.</p>
       </div>
 
       <section className="rounded-xl border bg-card p-5">
@@ -100,6 +102,28 @@ function CityData() {
           <Download className="!size-5" /> Export Triage Report (CSV)
         </Button>
       </section>
+      {!city.is_demo && <StaffSection />}
     </main>
+  );
+}
+
+function StaffSection() {
+  const { city, demoArg } = useCity();
+  const [email, setEmail] = useState("");
+  const add = useServerFn(addCityAdmin);
+  const m = useMutation({
+    mutationFn: () => add({ data: { demoRole: demoArg, cityId: city.id, email } }),
+    onSuccess: () => { toast.success(`${email} is now a Public Works admin`); setEmail(""); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <section className="rounded-xl border bg-card p-5">
+      <h2 className="text-lg font-bold">Public Works Staff</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Give a colleague admin access. They must sign in to BlockAid once with this email first.</p>
+      <form className="mt-4 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); m.mutate(); }}>
+        <Input type="email" required placeholder="colleague@city.gov" className="h-12 max-w-sm" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Button type="submit" size="tap" disabled={m.isPending}><UserPlus className="!size-5" /> Add admin</Button>
+      </form>
+    </section>
   );
 }

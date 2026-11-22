@@ -8,9 +8,9 @@ import { StatusBadge } from "@/components/blockaid/StatusBadge";
 import { ReportDialog } from "@/components/blockaid/ReportDialog";
 import { assetsQuery, myCheckinsQuery } from "@/lib/queries";
 import { ASSET_TYPE_LABEL, type Asset } from "@/lib/blockaid";
-import { useSession } from "@/lib/session";
+import { useCity, useSession } from "@/lib/session";
 
-export const Route = createFileRoute("/my-assets")({
+export const Route = createFileRoute("/c/$slug/my-assets")({
   head: () => ({
     meta: [
       { title: "My Adopted Assets — BlockAid" },
@@ -23,8 +23,9 @@ export const Route = createFileRoute("/my-assets")({
 });
 
 function MyAssets() {
-  const { profile, user, demoRole } = useSession();
-  const { data: assets = [] } = useQuery(assetsQuery);
+  const { user, demoRole } = useSession();
+  const { profile, city } = useCity();
+  const { data: assets = [] } = useQuery(assetsQuery(city.id));
   const { data: checkins = 0 } = useQuery(myCheckinsQuery(profile?.id));
   const [clearing, setClearing] = useState<Asset | null>(null);
   const mine = profile ? assets.filter((a) => a.adopted_by === profile.id) : [];
@@ -63,7 +64,7 @@ function MyAssets() {
       {mine.length === 0 ? (
         <div className="mt-6 rounded-xl border bg-card p-6 text-center">
           <p className="font-medium">You haven't adopted anything yet.</p>
-          <Button asChild size="tap" className="mt-3"><Link to="/">Find an asset on the map</Link></Button>
+          <Button asChild size="tap" className="mt-3"><Link to="/c/$slug" params={{ slug: city.slug }}>Find an asset on the map</Link></Button>
         </div>
       ) : (
         <ul className="mt-6 space-y-3">

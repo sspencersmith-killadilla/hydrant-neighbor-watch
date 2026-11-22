@@ -11,9 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as MyAssetsRouteImport } from './routes/my-assets'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminDataRouteImport } from './routes/admin.data'
+import { Route as GuideRouteImport } from './routes/guide'
+import { Route as SelfHostRouteImport } from './routes/self-host'
+import { Route as StartRouteImport } from './routes/start'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as CSlugIndexRouteImport } from './routes/c.$slug.index'
+import { Route as CSlugMyAssetsRouteImport } from './routes/c.$slug.my-assets'
+import { Route as CSlugAdminIndexRouteImport } from './routes/c.$slug.admin.index'
+import { Route as CSlugAdminDataRouteImport } from './routes/c.$slug.admin.data'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -25,58 +30,128 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MyAssetsRoute = MyAssetsRouteImport.update({
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SelfHostRoute = SelfHostRouteImport.update({
+  id: '/self-host',
+  path: '/self-host',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CSlugIndexRoute = CSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CSlugRoute,
+} as any)
+const CSlugMyAssetsRoute = CSlugMyAssetsRouteImport.update({
   id: '/my-assets',
   path: '/my-assets',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => CSlugRoute,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
+const CSlugAdminIndexRoute = CSlugAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => CSlugRoute,
 } as any)
-const AdminDataRoute = AdminDataRouteImport.update({
+const CSlugAdminDataRoute = CSlugAdminDataRouteImport.update({
   id: '/admin/data',
   path: '/admin/data',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => CSlugRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/my-assets': typeof MyAssetsRoute
-  '/admin/data': typeof AdminDataRoute
-  '/admin/': typeof AdminIndexRoute
+  '/guide': typeof GuideRoute
+  '/self-host': typeof SelfHostRoute
+  '/start': typeof StartRoute
+  '/c/$slug': typeof CSlugRouteWithChildren
+  '/c/$slug/my-assets': typeof CSlugMyAssetsRoute
+  '/c/$slug/': typeof CSlugIndexRoute
+  '/c/$slug/admin/data': typeof CSlugAdminDataRoute
+  '/c/$slug/admin/': typeof CSlugAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/my-assets': typeof MyAssetsRoute
-  '/admin/data': typeof AdminDataRoute
-  '/admin': typeof AdminIndexRoute
+  '/guide': typeof GuideRoute
+  '/self-host': typeof SelfHostRoute
+  '/start': typeof StartRoute
+  '/c/$slug/my-assets': typeof CSlugMyAssetsRoute
+  '/c/$slug': typeof CSlugIndexRoute
+  '/c/$slug/admin/data': typeof CSlugAdminDataRoute
+  '/c/$slug/admin': typeof CSlugAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/my-assets': typeof MyAssetsRoute
-  '/admin/data': typeof AdminDataRoute
-  '/admin/': typeof AdminIndexRoute
+  '/guide': typeof GuideRoute
+  '/self-host': typeof SelfHostRoute
+  '/start': typeof StartRoute
+  '/c/$slug': typeof CSlugRouteWithChildren
+  '/c/$slug/my-assets': typeof CSlugMyAssetsRoute
+  '/c/$slug/': typeof CSlugIndexRoute
+  '/c/$slug/admin/data': typeof CSlugAdminDataRoute
+  '/c/$slug/admin/': typeof CSlugAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/my-assets' | '/admin/data' | '/admin/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/guide'
+    | '/self-host'
+    | '/start'
+    | '/c/$slug'
+    | '/c/$slug/my-assets'
+    | '/c/$slug/'
+    | '/c/$slug/admin/data'
+    | '/c/$slug/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/my-assets' | '/admin/data' | '/admin'
-  id: '__root__' | '/' | '/auth' | '/my-assets' | '/admin/data' | '/admin/'
+  to:
+    | '/'
+    | '/auth'
+    | '/guide'
+    | '/self-host'
+    | '/start'
+    | '/c/$slug/my-assets'
+    | '/c/$slug'
+    | '/c/$slug/admin/data'
+    | '/c/$slug/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/guide'
+    | '/self-host'
+    | '/start'
+    | '/c/$slug'
+    | '/c/$slug/my-assets'
+    | '/c/$slug/'
+    | '/c/$slug/admin/data'
+    | '/c/$slug/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  MyAssetsRoute: typeof MyAssetsRoute
-  AdminDataRoute: typeof AdminDataRoute
-  AdminIndexRoute: typeof AdminIndexRoute
+  GuideRoute: typeof GuideRoute
+  SelfHostRoute: typeof SelfHostRoute
+  StartRoute: typeof StartRoute
+  CSlugRoute: typeof CSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -95,36 +170,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/my-assets': {
-      id: '/my-assets'
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/self-host': {
+      id: '/self-host'
+      path: '/self-host'
+      fullPath: '/self-host'
+      preLoaderRoute: typeof SelfHostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$slug/': {
+      id: '/c/$slug/'
+      path: '/'
+      fullPath: '/c/$slug/'
+      preLoaderRoute: typeof CSlugIndexRouteImport
+      parentRoute: typeof CSlugRoute
+    }
+    '/c/$slug/my-assets': {
+      id: '/c/$slug/my-assets'
       path: '/my-assets'
-      fullPath: '/my-assets'
-      preLoaderRoute: typeof MyAssetsRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/c/$slug/my-assets'
+      preLoaderRoute: typeof CSlugMyAssetsRouteImport
+      parentRoute: typeof CSlugRoute
     }
-    '/admin/': {
-      id: '/admin/'
+    '/c/$slug/admin/': {
+      id: '/c/$slug/admin/'
       path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/c/$slug/admin/'
+      preLoaderRoute: typeof CSlugAdminIndexRouteImport
+      parentRoute: typeof CSlugRoute
     }
-    '/admin/data': {
-      id: '/admin/data'
+    '/c/$slug/admin/data': {
+      id: '/c/$slug/admin/data'
       path: '/admin/data'
-      fullPath: '/admin/data'
-      preLoaderRoute: typeof AdminDataRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/c/$slug/admin/data'
+      preLoaderRoute: typeof CSlugAdminDataRouteImport
+      parentRoute: typeof CSlugRoute
     }
   }
 }
 
+interface CSlugRouteChildren {
+  CSlugMyAssetsRoute: typeof CSlugMyAssetsRoute
+  CSlugIndexRoute: typeof CSlugIndexRoute
+  CSlugAdminDataRoute: typeof CSlugAdminDataRoute
+  CSlugAdminIndexRoute: typeof CSlugAdminIndexRoute
+}
+
+const CSlugRouteChildren: CSlugRouteChildren = {
+  CSlugMyAssetsRoute: CSlugMyAssetsRoute,
+  CSlugIndexRoute: CSlugIndexRoute,
+  CSlugAdminDataRoute: CSlugAdminDataRoute,
+  CSlugAdminIndexRoute: CSlugAdminIndexRoute,
+}
+
+const CSlugRouteWithChildren = CSlugRoute._addFileChildren(CSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  MyAssetsRoute: MyAssetsRoute,
-  AdminDataRoute: AdminDataRoute,
-  AdminIndexRoute: AdminIndexRoute,
+  GuideRoute: GuideRoute,
+  SelfHostRoute: SelfHostRoute,
+  StartRoute: StartRoute,
+  CSlugRoute: CSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

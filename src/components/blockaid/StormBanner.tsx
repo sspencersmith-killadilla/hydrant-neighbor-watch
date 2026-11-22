@@ -2,11 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { CloudRainWind } from "lucide-react";
 import { activeStormQuery, assetsQuery } from "@/lib/queries";
 import { readinessPercent } from "@/lib/blockaid";
+import { useCity } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 export function StormBanner() {
-  const { data: storm } = useQuery(activeStormQuery);
-  const { data: assets = [] } = useQuery(assetsQuery);
+  const { city } = useCity();
+  const { data: storm } = useQuery(activeStormQuery(city.id));
+  const { data: assets = [] } = useQuery(assetsQuery(city.id));
   if (!storm) return null;
   const pct = readinessPercent(assets);
   const warning = storm.severity === "warning";

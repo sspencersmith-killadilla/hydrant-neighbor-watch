@@ -24,9 +24,9 @@ function FitBounds({ assets }: { assets: Asset[] }) {
 }
 
 export default function AssetMap({
-  assets, selectedId, onSelect, className,
-}: { assets: Asset[]; selectedId?: string | null; onSelect?: (a: Asset) => void; className?: string }) {
-  const center = useMemo<[number, number]>(() => [41.5912, -93.6175], []);
+  assets, selectedId, onSelect, className, center: c,
+}: { assets: Asset[]; selectedId?: string | null; onSelect?: (a: Asset) => void; className?: string; center?: [number, number] }) {
+  const center = useMemo<[number, number]>(() => c ?? [39.8283, -98.5795], [c]);
   return (
     <MapContainer center={center} zoom={16} className={className ?? ""} scrollWheelZoom>
       <TileLayer

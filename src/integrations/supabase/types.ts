@@ -35,6 +35,7 @@ export type Database = {
           adopted_by: string | null
           asset_code: string
           asset_type: Database["public"]["Enums"]["asset_type"]
+          city_id: string
           id: string
           last_updated_at: string
           lat: number
@@ -47,6 +48,7 @@ export type Database = {
           adopted_by?: string | null
           asset_code: string
           asset_type: Database["public"]["Enums"]["asset_type"]
+          city_id: string
           id?: string
           last_updated_at?: string
           lat: number
@@ -59,6 +61,7 @@ export type Database = {
           adopted_by?: string | null
           asset_code?: string
           asset_type?: Database["public"]["Enums"]["asset_type"]
+          city_id?: string
           id?: string
           last_updated_at?: string
           lat?: number
@@ -72,6 +75,81 @@ export type Database = {
             columns: ["adopted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cities: {
+        Row: {
+          center_lat: number
+          center_lng: number
+          created_at: string
+          created_by: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          region: string | null
+          slug: string
+        }
+        Insert: {
+          center_lat: number
+          center_lng: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          region?: string | null
+          slug: string
+        }
+        Update: {
+          center_lat?: number
+          center_lng?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          region?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
+      city_members: {
+        Row: {
+          city_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_members_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
             referencedColumns: ["id"]
           },
         ]
@@ -159,6 +237,7 @@ export type Database = {
       }
       storm_events: {
         Row: {
+          city_id: string
           created_at: string
           id: string
           instructions: string | null
@@ -167,6 +246,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          city_id: string
           created_at?: string
           id?: string
           instructions?: string | null
@@ -175,6 +255,7 @@ export type Database = {
           title: string
         }
         Update: {
+          city_id?: string
           created_at?: string
           id?: string
           instructions?: string | null
@@ -182,7 +263,15 @@ export type Database = {
           severity?: Database["public"]["Enums"]["storm_severity"]
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "storm_events_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
