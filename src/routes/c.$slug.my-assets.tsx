@@ -6,7 +6,9 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/blockaid/StatusBadge";
 import { ReportDialog } from "@/components/blockaid/ReportDialog";
-import { assetsQuery, myCheckinsQuery } from "@/lib/queries";
+import { assetsQuery } from "@/lib/queries";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyCheckins } from "@/lib/blockaid.functions";
 import { ASSET_TYPE_LABEL, type Asset } from "@/lib/blockaid";
 import { useCity, useSession } from "@/lib/session";
 
@@ -24,9 +26,14 @@ export const Route = createFileRoute("/c/$slug/my-assets")({
 
 function MyAssets() {
   const { user, demoRole } = useSession();
-  const { profile, city } = useCity();
+  const { profile, city, demoArg } = useCity();
+  const fetchCheckins = useServerFn(getMyCheckins);
   const { data: assets = [] } = useQuery(assetsQuery(city.id));
-  const { data: checkins = 0 } = useQuery(myCheckinsQuery(profile?.id));
+  const { data: checkins = 0 } = useQuery({
+    queryKey: ["reports", "mine", city.id, profile?.id],
+    queryFn: () => fetchCheckins({ data: { demoRole: demoArg, cityId: city.id } }),
+    enabled: !!profile,
+  });
   const [clearing, setClearing] = useState<Asset | null>(null);
   const mine = profile ? assets.filter((a) => a.adopted_by === profile.id) : [];
   const cleared = mine.filter((a) => a.status === "cleared").length;

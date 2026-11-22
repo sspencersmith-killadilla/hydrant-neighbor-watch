@@ -39,6 +39,7 @@ done
 | --- | --- |
 | `0000_blockaid_schema_and_seed.sql` | Tables, security rules, signup trigger, and the demo data |
 | `0001_multi_city.sql` | Cities, city admins, and the "Maple Heights (Demo)" city |
+| `0002_limit_report_columns.sql` | Hides who filed each report and its photo from public reads |
 
 Apply files added later the same way, and only once each.
 

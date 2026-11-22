@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AdminGate } from "@/components/blockaid/AdminGate";
 import { LazyMap } from "@/components/blockaid/LazyMap";
 import { activeStormQuery, assetsQuery, openCrewReportsQuery } from "@/lib/queries";
-import { activateStorm, deactivateStorm, getPhotoUrls, resetAdoptedAssets, resolveTicket } from "@/lib/blockaid.functions";
+import { activateStorm, deactivateStorm, getCrewPhotos, resetAdoptedAssets, resolveTicket } from "@/lib/blockaid.functions";
 import { ASSET_TYPE_LABEL } from "@/lib/blockaid";
 import { issueSeverity, issueType } from "@/lib/triage";
 import { useCity } from "@/lib/session";
@@ -52,12 +52,10 @@ function Dispatch() {
     );
   }, [crewAssets, openReports, sort]);
 
-  const photoPaths = rows.map((r) => r.report?.photo_url).filter((p): p is string => !!p);
-  const fetchPhotos = useServerFn(getPhotoUrls);
+  const fetchPhotos = useServerFn(getCrewPhotos);
   const { data: photoUrls = {} } = useQuery({
-    queryKey: ["photos", photoPaths],
-    queryFn: () => fetchPhotos({ data: { paths: photoPaths } }),
-    enabled: photoPaths.length > 0,
+    queryKey: ["reports", "photos", city.id, openReports.length],
+    queryFn: () => fetchPhotos({ data: { demoRole: demoArg, cityId: city.id } }),
   });
 
   const resolve = useServerFn(resolveTicket);
@@ -132,9 +130,9 @@ function Dispatch() {
                         <p className="mt-1 text-xs text-muted-foreground">{formatDistanceToNow(new Date(report?.created_at ?? a.last_updated_at), { addSuffix: true })}</p>
                       </td>
                       <td className="p-3">
-                        {report?.photo_url && photoUrls[report.photo_url] ? (
-                          <button onClick={() => setLightbox(photoUrls[report.photo_url!] ?? null)} aria-label={`View photo for ${a.asset_code}`}>
-                            <img src={photoUrls[report.photo_url]} alt="" className="h-14 w-14 rounded-md object-cover" />
+                        {report && photoUrls[report.id] ? (
+                          <button onClick={() => setLightbox(photoUrls[report.id] ?? null)} aria-label={`View photo for ${a.asset_code}`}>
+                            <img src={photoUrls[report.id]} alt="" className="h-14 w-14 rounded-md object-cover" />
                           </button>
                         ) : <span className="text-xs text-muted-foreground">No photo</span>}
                       </td>

@@ -49,7 +49,7 @@ export const reportsForAssetQuery = (assetId: string) =>
     queryKey: ["reports", assetId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("status_reports").select("*").eq("asset_id", assetId)
+        .from("status_reports").select("id, asset_id, status, debris_type, notes, resolved_by_city, created_at").eq("asset_id", assetId)
         .order("created_at", { ascending: false }).limit(5);
       if (error) throw error;
       return data;
@@ -61,7 +61,7 @@ export const openCrewReportsQuery = (cityId: string) =>
     queryKey: ["reports", "open-crew", cityId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("status_reports").select("*, assets!inner(city_id)")
+        .from("status_reports").select("id, asset_id, status, debris_type, notes, resolved_by_city, created_at, assets!inner(city_id)")
         .eq("assets.city_id", cityId).eq("status", "needs_city_crew").eq("resolved_by_city", false)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -69,14 +69,3 @@ export const openCrewReportsQuery = (cityId: string) =>
     },
   });
 
-export const myCheckinsQuery = (profileId: string | undefined) =>
-  queryOptions({
-    queryKey: ["reports", "mine", profileId],
-    enabled: !!profileId,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("status_reports").select("id", { count: "exact", head: true }).eq("reporter_id", profileId!);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });

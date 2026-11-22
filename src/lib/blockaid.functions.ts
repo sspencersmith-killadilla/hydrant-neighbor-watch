@@ -220,15 +220,33 @@ export const importAssets = createServerFn({ method: "POST" })
     return { count: data.rows.length };
   });
 
-export const getPhotoUrls = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ paths: z.array(z.string().max(200)).max(200) }).parse(d))
+/** Signed photo links for a city's open crew tickets, keyed by report id. Admins only. */
+export const getCrewPhotos = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ demoRole, cityId }).parse(d))
   .handler(async ({ data }) => {
-    if (!data.paths.length) return {} as Record<string, string>;
+    await requireAdmin(data.demoRole, data.cityId);
     const admin = await getAdmin();
-    const { data: signed } = await admin.storage.from("report-photos").createSignedUrls(data.paths, 3600);
+    const { data: rows } = await admin.from("status_reports").select("id, photo_url, assets!inner(city_id)")
+      .eq("assets.city_id", data.cityId).eq("status", "needs_city_crew").eq("resolved_by_city", false)
+      .not("photo_url", "is", null);
+    const list = (rows ?? []).filter((r) => r.photo_url);
+    if (!list.length) return {} as Record<string, string>;
+    const { data: signed } = await admin.storage.from("report-photos").createSignedUrls(list.map((r) => r.photo_url!), 3600);
+    const byPath = new Map((signed ?? []).map((x) => [x.path, x.signedUrl]));
     const out: Record<string, string> = {};
-    for (const s of signed ?? []) if (s.path && s.signedUrl) out[s.path] = s.signedUrl;
+    for (const r of list) { const u = byPath.get(r.photo_url!); if (u) out[r.id] = u; }
     return out;
+  });
+
+export const getMyCheckins = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ demoRole, cityId }).parse(d))
+  .handler(async ({ data }) => {
+    const actor = await resolveActor(data.demoRole, data.cityId);
+    if (!actor) return 0;
+    const admin = await getAdmin();
+    const { count } = await admin.from("status_reports").select("id, assets!inner(city_id)", { count: "exact", head: true })
+      .eq("reporter_id", actor.id).eq("assets.city_id", data.cityId);
+    return count ?? 0;
   });
 
 export const createCity = createServerFn({ method: "POST" })
